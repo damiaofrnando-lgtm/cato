@@ -1,0 +1,6 @@
+{
+  "name": "Catoca - Sociedade Mineira de Diamantes",
+  "description": "Plataforma oficial da Sociedade Mineira de Catoca para acompanhamento de concessões diamantíferas, ciclos automáticos de extração de 24h e partilha mineral.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

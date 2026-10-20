@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-diamond-white: #ffffff;
+    --bg-diamond-subtle: #f8fafc;
+    --bg-diamond-card: #ffffff;
+    --diamond-border: #e2e8f0;
+    --diamond-accent: #0284c7;
+    --diamond-sparkle: #38bdf8;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+  }
+
+  body {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Diamond Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Diamond Gem Facet Shapes & Glass */
+.diamond-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.diamond-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 10px 30px -6px rgba(56, 189, 248, 0.15), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+}
+
+.diamond-crystal-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 24px -6px rgba(14, 165, 233, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+.diamond-shape {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.diamond-badge {
+  clip-path: polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%);
+}
+
+/* Luxury Diamond White Buttons */
+.btn-diamond-primary {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-diamond-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.45);
+}
+
+.btn-diamond-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-diamond-white {
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s ease;
+}
+
+.btn-diamond-white:hover {
+  background: #ffffff;
+  border-color: #93c5fd;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.2);
+}
+
+/* Diamond Shimmer Effect */
+@keyframes diamondShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.diamond-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: diamondShimmer 3s infinite;
+}
+
+/* Marquee ticker */
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 32s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

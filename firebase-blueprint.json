@@ -1,0 +1,277 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Perfil do operador da Sociedade Mineira de Catoca com saldos de diamantes e dados da concessão",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID único do operador Catoca",
+          "maxLength": 64
+        },
+        "phone": {
+          "type": "string",
+          "description": "Número de telefone do operador",
+          "maxLength": 32
+        },
+        "phoneCode": {
+          "type": "string",
+          "description": "Código do país telefônico",
+          "maxLength": 8
+        },
+        "email": {
+          "type": "string",
+          "description": "E-mail cadastrado do operador",
+          "maxLength": 128
+        },
+        "password": {
+          "type": "string",
+          "description": "Hash ou senha de acesso do operador",
+          "maxLength": 128
+        },
+        "inviteCode": {
+          "type": "string",
+          "description": "Código de convite do operador",
+          "maxLength": 32
+        },
+        "invitedBy": {
+          "type": "string",
+          "description": "Código do padrinho / concessão que convidou",
+          "maxLength": 64
+        },
+        "vipLevel": {
+          "type": "number",
+          "description": "Nível do plano VIP de diamante ativo (0 a 15)"
+        },
+        "balance": {
+          "type": "number",
+          "description": "Saldo em Kwanzas disponível no cofre"
+        },
+        "depositBalance": {
+          "type": "number",
+          "description": "Saldo acumulado de depósitos e alocações"
+        },
+        "todayEarnings": {
+          "type": "number",
+          "description": "Rendimentos automáticos gerados hoje"
+        },
+        "yesterdayEarnings": {
+          "type": "number",
+          "description": "Rendimentos gerados ontem"
+        },
+        "totalEarnings": {
+          "type": "number",
+          "description": "Total histórico de ganhos em Kz"
+        },
+        "thisMonthEarnings": {
+          "type": "number",
+          "description": "Rendimentos obtidos no mês atual"
+        },
+        "tasksCompletedToday": {
+          "type": "number",
+          "description": "Quantidade de ciclos concluídos hoje"
+        },
+        "luckyDrawSpins": {
+          "type": "number",
+          "description": "Giros restantes na Roleta de Diamantes"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "URL do avatar do operador",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Data ISO de criação da credencial"
+        },
+        "payPasswordSet": {
+          "type": "boolean",
+          "description": "Indica se o PIN de transferência foi configurado"
+        },
+        "totalCaratsExtracted": {
+          "type": "number",
+          "description": "Quilates totais de diamantes extraídos"
+        },
+        "cycleTargetTime": {
+          "type": "number",
+          "description": "Timestamp em ms para expiração do ciclo de 24h"
+        }
+      },
+      "required": ["id", "phone", "email", "vipLevel", "balance", "totalEarnings"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Registro financeiro de alocação, saque, lucro automático ou bônus na mina",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador da transação",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID do operador proprietário da transação",
+          "maxLength": 64
+        },
+        "type": {
+          "type": "string",
+          "description": "Tipo de transação financeira ou de extração",
+          "maxLength": 32
+        },
+        "amount": {
+          "type": "number",
+          "description": "Valor monetário da transação em Kwanzas"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status da operação",
+          "maxLength": 32
+        },
+        "date": {
+          "type": "string",
+          "description": "Data legível da transação"
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Timestamp numérico em milissegundos"
+        },
+        "note": {
+          "type": "string",
+          "description": "Descrição detalhada do lote ou transação",
+          "maxLength": 256
+        }
+      },
+      "required": ["id", "userId", "type", "amount", "status"]
+    },
+    "Investment": {
+      "title": "Investment",
+      "description": "Subscrição no Fundo de Kimberlito Catoca",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID da cota de investimento",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID do investidor",
+          "maxLength": 64
+        },
+        "planId": {
+          "type": "string",
+          "description": "Identificador do plano de kimberlito",
+          "maxLength": 64
+        },
+        "planName": {
+          "type": "string",
+          "description": "Nome do plano de expansão",
+          "maxLength": 128
+        },
+        "amount": {
+          "type": "number",
+          "description": "Valor investido em Kz"
+        },
+        "dailyYieldPercent": {
+          "type": "number",
+          "description": "Percentual de rendimento diário"
+        },
+        "dailyIncome": {
+          "type": "number",
+          "description": "Lucro diário correspondente em Kz"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Data de início da subscrição"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "Data de término do contrato"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status do investimento (active, completed)"
+        },
+        "daysRemaining": {
+          "type": "number",
+          "description": "Dias restantes do contrato"
+        }
+      },
+      "required": ["id", "userId", "planId", "amount", "status"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Avisos e notificações em tempo real do letreiro da concessão",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "text": { "type": "string", "maxLength": 512 },
+        "type": { "type": "string", "maxLength": 32 },
+        "timestamp": { "type": "number" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "text"]
+    },
+    "MiningTask": {
+      "title": "MiningTask",
+      "description": "Lotes de diamantes e tarefas de extração na mina de Saurimo",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 128 },
+        "sector": { "type": "string", "maxLength": 128 },
+        "caratWeight": { "type": "string", "maxLength": 64 },
+        "purityGrade": { "type": "string", "maxLength": 64 },
+        "reward": { "type": "number" },
+        "lotCode": { "type": "string", "maxLength": 64 },
+        "description": { "type": "string", "maxLength": 256 },
+        "miningRatePerHour": { "type": "number" },
+        "status": { "type": "string", "maxLength": 32 },
+        "progressPercent": { "type": "number" }
+      },
+      "required": ["id", "title", "sector", "caratWeight", "reward"]
+    },
+    "ConcessionStats": {
+      "title": "ConcessionStats",
+      "description": "Métricas oficiais da concessão Catoca (total minerado, operadores ativos, etc.)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "totalCaratsMined": { "type": "number" },
+        "activeOperatorsCount": { "type": "number" },
+        "totalDistributedKz": { "type": "number" },
+        "concessionStatus": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Documento do usuário e operador da mina Catoca"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Extrato de transações e produção de diamantes"
+    },
+    "/investments/{investmentId}": {
+      "schema": "Investment",
+      "description": "Contratos ativos do Fundo de Kimberlito Catoca"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Avisos e movimentações em tempo real do letreiro"
+    },
+    "/miningTasks/{taskId}": {
+      "schema": "MiningTask",
+      "description": "Lotes de diamantes disponíveis para extração"
+    },
+    "/concession_stats/{statId}": {
+      "schema": "ConcessionStats",
+      "description": "Estatísticas em tempo real da concessão mineral Catoca"
+    }
+  }
+}

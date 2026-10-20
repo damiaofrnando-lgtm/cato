@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Connection test document
+    match /test/{documentId} {
+      allow read, write: if true;
+    }
+
+    // Catoca Mine Concession Users
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Ledger transactions (alocação, resgate, lucros automáticos 24h, bônus)
+    match /transactions/{transactionId} {
+      allow read, write: if true;
+    }
+
+    // Kimberlite wealth fund active subscriptions
+    match /investments/{investmentId} {
+      allow read, write: if true;
+    }
+
+    // Live Concession Announcements / Marquee Tickers
+    match /announcements/{announcementId} {
+      allow read, write: if true;
+    }
+
+    // Real-Time Diamond Mining Lots & Tasks
+    match /miningTasks/{taskId} {
+      allow read, write: if true;
+    }
+
+    // Mine Concession Metadata & Metrics
+    match /concession_stats/{statId} {
+      allow read, write: if true;
+    }
+
+    // Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
