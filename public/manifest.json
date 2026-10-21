@@ -1,0 +1,38 @@
+{
+  "id": "/",
+  "name": "Catoca - Sociedade Mineira de Diamantes",
+  "short_name": "Catoca Mina",
+  "description": "Plataforma oficial da Sociedade Mineira de Catoca para acompanhamento de concessões diamantíferas, ciclos automáticos de extração de 24h e partilha mineral.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0284c7",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

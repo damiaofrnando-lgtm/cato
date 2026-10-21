@@ -21,7 +21,8 @@ import {
   X,
   CheckCircle2,
   Building2,
-  Users
+  Users,
+  Gift
 } from 'lucide-react';
 
 export const MinePage: React.FC = () => {
@@ -80,11 +81,11 @@ export const MinePage: React.FC = () => {
       action: () => openModal('wealth_fund'),
     },
     {
-      id: 'lucky',
-      label: 'Roleta de Diamantes',
-      icon: Sparkles,
+      id: 'daily_reward',
+      label: 'Bónus de Presença Diária & Missões',
+      icon: Gift,
       color: 'text-amber-500',
-      action: () => openModal('lucky_draw'),
+      action: () => openModal('daily_reward'),
     },
     {
       id: 'service',
@@ -119,9 +120,13 @@ export const MinePage: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 shadow-sm">
               <img
-                src={user?.avatar || '/src/assets/images/catoca_diamond_gem_1792306524777.jpg'}
+                src={user?.avatar || '/assets/images/catoca_diamond_gem_1792306524777.jpg'}
                 alt="Avatar"
                 className="w-full h-full rounded-2xl object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/images/catoca_diamond_gem_1792306524777.jpg';
+                }}
               />
             </div>
             <div>

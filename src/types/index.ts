@@ -59,6 +59,8 @@ export interface VIPTier {
   caratCapacity: string;
   diamondCut: string;
   diamondImage: string;
+  cargoImage: string;
+  cargoDescription?: string;
   accentColor: string;
   isPopular?: boolean;
 }
@@ -73,6 +75,9 @@ export interface Transaction {
   note: string;
   timestamp?: number;
   txHash?: string;
+  proofUrl?: string;
+  senderName?: string;
+  paymentMethod?: string;
 }
 
 export interface FundPlan {

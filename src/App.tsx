@@ -9,6 +9,7 @@ import { WithdrawModal } from './components/WithdrawModal';
 import { LuckyDrawModal } from './components/LuckyDrawModal';
 import { WealthFundModal } from './components/WealthFundModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
+import { DailyRewardModal } from './components/DailyRewardModal';
 
 // Pages
 import { RegisterPage } from './pages/RegisterPage';
@@ -105,6 +106,7 @@ const AppContent: React.FC = () => {
         {activeModal?.name === 'recharge' && <RechargeModal />}
         {activeModal?.name === 'withdraw' && <WithdrawModal />}
         {activeModal?.name === 'lucky_draw' && <LuckyDrawModal />}
+        {activeModal?.name === 'daily_reward' && <DailyRewardModal />}
         {activeModal?.name === 'wealth_fund' && <WealthFundModal />}
         {activeModal?.name === 'app_download' && <AppDownloadModal />}
       </div>

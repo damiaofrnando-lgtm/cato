@@ -63,9 +63,10 @@ export const LoginPage: React.FC = () => {
       {/* Top Banner - Catoca Diamonds */}
       <div className="relative h-64 w-full overflow-hidden bg-slate-900">
         <img
-          src="/src/assets/images/catoca_diamond_hero_1792306524766.jpg"
+          src="/assets/images/catoca_diamond_hero_1792306524766.jpg"
           alt="Catoca Diamantes"
           className="w-full h-full object-cover opacity-90 scale-105"
+          referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/30 via-slate-900/50 to-slate-950/90" />
 

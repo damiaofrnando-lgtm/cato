@@ -44,7 +44,7 @@ interface AppContextType {
   logout: () => void;
   claimDiamondLot: (taskId: string) => { success: boolean; reward: number; message: string };
   completedTaskIds: string[];
-  recharge: (amount: number, method: string) => Promise<{ success: boolean; message: string }>;
+  recharge: (amount: number, method: string, proofUrl?: string, senderInfo?: string) => Promise<{ success: boolean; message: string }>;
   withdraw: (amount: number, accountType: string, accountNumber: string, accountName: string) => Promise<{ success: boolean; message: string }>;
   upgradeVip: (tierId: number) => Promise<{ success: boolean; message: string }>;
   triggerSimulated24hProfit: () => Promise<{ success: boolean; profit: number; message: string }>;
@@ -493,7 +493,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         tasksCompletedToday: 0,
         luckyDrawSpins: 3,
         token: 'jwt_catoca_' + Date.now(),
-        avatar: '/src/assets/images/catoca_diamond_gem_1792306524777.jpg',
+        avatar: '/assets/images/catoca_diamond_gem_1792306524777.jpg',
         createdAt: new Date().toISOString(),
         payPasswordSet: false,
         totalCaratsExtracted: 0.20,
@@ -671,7 +671,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           tasksCompletedToday: 2,
           luckyDrawSpins: 5,
           token: 'jwt_catoca_demo',
-          avatar: '/src/assets/images/catoca_diamond_gem_1792306524777.jpg',
+          avatar: '/assets/images/catoca_diamond_gem_1792306524777.jpg',
           createdAt: new Date().toISOString(),
           payPasswordSet: true,
           totalCaratsExtracted: 38.45,
@@ -735,8 +735,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // 6. Recharge in Firestore
-  const recharge = async (amount: number, method: string) => {
+  // 6. Recharge in Firestore with receipt proof
+  const recharge = async (amount: number, method: string, proofUrl?: string, senderInfo?: string) => {
     if (!user) return { success: false, message: 'Usuário não autenticado' };
 
     try {
@@ -744,7 +744,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await updateDoc(userRef, {
         balance: user.balance + amount,
         depositBalance: user.depositBalance + amount,
-        luckyDrawSpins: user.luckyDrawSpins + 2,
+        luckyDrawSpins: (user.luckyDrawSpins || 0) + 2,
       });
 
       const txId = `tx-rech-${Date.now()}`;
@@ -756,16 +756,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'completed',
         date: new Date().toLocaleDateString('pt-BR'),
         timestamp: Date.now(),
-        note: `Alocação de Capital Mineral Catoca via ${method.toUpperCase()}`,
+        note: `Depósito via ${method.toUpperCase()}${senderInfo ? ` (${senderInfo})` : ''}`,
+        paymentMethod: method,
+        proofUrl: proofUrl || '',
+        senderName: senderInfo || '',
       };
       await setDoc(doc(db, 'transactions', txId), rechTx);
 
       return {
         success: true,
-        message: `Alocação de ${formatCurrency(amount)} confirmada na mina de Catoca!`,
+        message: `Depósito de ${formatCurrency(amount)} confirmado com comprovativo no cofre!`,
       };
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
+      return { success: false, message: 'Erro ao processar alocação' };
     }
   };
 

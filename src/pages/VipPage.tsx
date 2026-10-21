@@ -144,23 +144,35 @@ export const VipPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Top Row: Diamond Photo + Name + Price */}
-              <div className="flex gap-3.5 items-center">
-                {/* Real Diamond Photo */}
-                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm shrink-0 bg-slate-50 group">
+              {/* Top Row: Cargo Photograph + Diamond Cut Badge + Title + Price */}
+              <div className="flex gap-3.5 items-start">
+                {/* Cargo Photograph */}
+                <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-sky-100 shadow-sm shrink-0 bg-slate-900 group">
                   <img
-                    src={tier.diamondImage}
-                    alt={tier.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    src={tier.cargoImage || tier.diamondImage}
+                    alt={tier.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/images/catoca_miner_helper_1792584628027.jpg';
+                    }}
                   />
-                  <div className="absolute bottom-0 inset-x-0 bg-slate-900/60 backdrop-blur-xs text-[9px] font-black text-white text-center py-0.5 font-mono">
+                  <div className="absolute top-1 left-1 w-6 h-6 rounded-lg overflow-hidden border border-white/60 shadow-xs bg-black/40">
+                    <img
+                      src={tier.diamondImage}
+                      alt={tier.diamondCut}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 backdrop-blur-xs text-[9px] font-black text-white text-center py-0.5 font-mono">
                     {tier.name}
                   </div>
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-mono">
                       {tier.name}
                     </span>
@@ -168,11 +180,14 @@ export const VipPage: React.FC = () => {
                       {tier.title}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                    <span>{tier.diamondCut}</span>
+                  <p className="text-[10.5px] text-slate-500 font-medium mt-0.5 line-clamp-2">
+                    {tier.cargoDescription || tier.diamondCut}
                   </p>
+                  <div className="flex items-center gap-1 text-[10px] text-sky-700 font-semibold mt-1">
+                    <span>💎 {tier.diamondCut}</span>
+                  </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className="text-[10px] text-slate-400 font-mono uppercase">Investimento:</span>
+                    <span className="text-[10px] text-slate-400 font-mono uppercase">Alocação:</span>
                     <span className="text-sm font-black text-slate-900 font-mono">
                       {formatCurrency(tier.price)}
                     </span>

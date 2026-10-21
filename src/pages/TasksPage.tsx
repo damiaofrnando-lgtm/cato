@@ -230,7 +230,15 @@ export const TasksPage: React.FC = () => {
             {VIP_TIERS.slice(1, 4).map(v => (
               <div key={v.id} className="p-2 rounded-2xl bg-slate-50 border border-slate-200 text-center">
                 <div className="w-10 h-10 rounded-xl overflow-hidden mx-auto mb-1 border border-slate-200">
-                  <img src={v.diamondImage} alt={v.name} className="w-full h-full object-cover" />
+                  <img
+                    src={v.cargoImage || v.diamondImage}
+                    alt={v.name}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/assets/images/catoca_diamond_gem_1792306524777.jpg';
+                    }}
+                  />
                 </div>
                 <span className="text-[10px] font-black text-slate-900 block">{v.name}</span>
                 <span className="text-[9.5px] font-bold text-emerald-600 font-mono">+{formatCurrency(v.dailyIncome)}/dia</span>

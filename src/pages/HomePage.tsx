@@ -113,9 +113,13 @@ export const HomePage: React.FC = () => {
             <div className="relative w-12 h-12 flex items-center justify-center">
               <div className="w-12 h-12 bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 p-0.5 rounded-2xl shadow-md flex items-center justify-center">
                 <img
-                  src={user?.avatar || '/src/assets/images/catoca_diamond_gem_1792306524777.jpg'}
+                  src={user?.avatar || '/assets/images/catoca_diamond_gem_1792306524777.jpg'}
                   alt="Avatar Catoca"
                   className="w-full h-full rounded-2xl object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/images/catoca_diamond_gem_1792306524777.jpg';
+                  }}
                 />
               </div>
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center text-white text-[9px] shadow">
@@ -257,9 +261,13 @@ export const HomePage: React.FC = () => {
       {/* Hero Banner Showcase - Catoca Diamonds */}
       <div className="relative h-44 rounded-3xl overflow-hidden shadow-md border border-slate-200">
         <img
-          src="/src/assets/images/catoca_diamond_hero_1792306524766.jpg"
+          src="/assets/images/catoca_diamond_hero_1792306524766.jpg"
           alt="Sociedade Mineira de Catoca"
           className="w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/assets/images/catoca_heavy_truck_1792584629309.jpg';
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-end">
           <div className="flex items-center gap-1.5 mb-1">
