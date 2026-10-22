@@ -40,13 +40,17 @@ export const Navbar: React.FC<NavbarProps> = ({ title, showBack = false }) => {
         ) : null}
 
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigateTo('/pages/index/index')}>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 via-sky-400 to-indigo-600 p-0.5 shadow-md shadow-blue-500/20 flex items-center justify-center">
-            <Gem size={17} className="text-white" />
+          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+            <img
+              src="/assets/aistudio/IMG_1487_83d7197c.jpeg"
+              alt="Catoca Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h1 className="text-slate-900 font-black tracking-tight text-sm leading-none flex items-center gap-1.5">
               <span>CATOCA</span>
-              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200">
+              <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-full border border-sky-200">
                 DIAMANTES
               </span>
             </h1>
@@ -56,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title, showBack = false }) => {
               </p>
             ) : (
               <p className="text-[10px] text-slate-400 font-medium leading-none mt-1">
-                Saurimo · Angola
+                Sociedade Mineira · Saurimo
               </p>
             )}
           </div>

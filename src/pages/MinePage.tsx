@@ -118,14 +118,14 @@ export const MinePage: React.FC = () => {
 
         <div className="flex items-center justify-between mb-4 relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 shadow-sm overflow-hidden">
               <img
-                src={user?.avatar || '/assets/images/catoca_diamond_gem_1792306524777.jpg'}
+                src={user?.avatar || '/assets/aistudio/IMG_1488_7432a176.jpeg'}
                 alt="Avatar"
                 className="w-full h-full rounded-2xl object-cover"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/assets/images/catoca_diamond_gem_1792306524777.jpg';
+                  (e.target as HTMLImageElement).src = '/assets/aistudio/IMG_1488_7432a176.jpeg';
                 }}
               />
             </div>

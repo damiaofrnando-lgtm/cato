@@ -6,7 +6,6 @@ import { LanguageModal } from './components/LanguageModal';
 import { CustomerServiceModal } from './components/CustomerServiceModal';
 import { RechargeModal } from './components/RechargeModal';
 import { WithdrawModal } from './components/WithdrawModal';
-import { LuckyDrawModal } from './components/LuckyDrawModal';
 import { WealthFundModal } from './components/WealthFundModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
 import { DailyRewardModal } from './components/DailyRewardModal';
@@ -20,7 +19,6 @@ import { VipPage } from './pages/VipPage';
 import { TeamPage } from './pages/TeamPage';
 import { MinePage } from './pages/MinePage';
 import { NewsPage } from './pages/NewsPage';
-import { AgentPage } from './pages/AgentPage';
 import { RecordsPage } from './pages/RecordsPage';
 
 const AppContent: React.FC = () => {
@@ -53,8 +51,6 @@ const AppContent: React.FC = () => {
         return <MinePage />;
       case '/pages/news/index':
         return <NewsPage />;
-      case '/pages/agent/index':
-        return <AgentPage />;
       case '/pages/records/index':
         return <RecordsPage />;
       default:
@@ -74,8 +70,6 @@ const AppContent: React.FC = () => {
         return 'Cofre Mineral Catoca';
       case '/pages/news/index':
         return 'Processo Kimberley';
-      case '/pages/agent/index':
-        return 'Carreira de Lavra';
       case '/pages/records/index':
         return 'Extrato Mineral';
       default:
@@ -105,7 +99,6 @@ const AppContent: React.FC = () => {
         {activeModal?.name === 'customer_service' && <CustomerServiceModal />}
         {activeModal?.name === 'recharge' && <RechargeModal />}
         {activeModal?.name === 'withdraw' && <WithdrawModal />}
-        {activeModal?.name === 'lucky_draw' && <LuckyDrawModal />}
         {activeModal?.name === 'daily_reward' && <DailyRewardModal />}
         {activeModal?.name === 'wealth_fund' && <WealthFundModal />}
         {activeModal?.name === 'app_download' && <AppDownloadModal />}

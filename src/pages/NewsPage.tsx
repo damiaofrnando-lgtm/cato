@@ -44,18 +44,23 @@ export const NewsPage: React.FC = () => {
 
   return (
     <div className="pb-28 pt-2 px-4 space-y-4 max-w-md mx-auto">
-      {/* Header Card */}
-      <div className="diamond-crystal-card p-5 rounded-3xl border border-sky-100 shadow-md relative overflow-hidden bg-white space-y-2">
-        <div className="absolute top-0 right-0 -mr-6 -mt-6 w-32 h-32 bg-sky-100/50 diamond-shape opacity-40 pointer-events-none" />
-
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
-            <BookOpen size={20} />
-          </div>
-          <div>
-            <h2 className="text-base font-black text-slate-900">Artigos & Certificações Catoca</h2>
-            <p className="text-xs text-slate-600">Geologia, regulação Kimberley e economia mineral em Angola</p>
-          </div>
+      {/* Featured Story Banner: African Mining Indaba */}
+      <div className="relative h-48 rounded-3xl overflow-hidden shadow-md border border-slate-200">
+        <img
+          src="/assets/aistudio/IMG_1490_26bb4c78.jpeg"
+          alt="Catoca no African Mining Indaba"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-end">
+          <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-500/20 border border-amber-400/40 px-2 py-0.5 rounded-full w-fit mb-1">
+            Destaque Internacional
+          </span>
+          <h3 className="text-sm font-black text-white leading-tight">
+            Catoca em Destaque na Maior Montra da Mineração em África
+          </h3>
+          <p className="text-[11px] text-slate-200 mt-0.5 line-clamp-1">
+            Comitiva executiva apresenta novos marcos de extração e sustentabilidade na Mining Indaba.
+          </p>
         </div>
       </div>
 

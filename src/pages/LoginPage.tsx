@@ -63,8 +63,8 @@ export const LoginPage: React.FC = () => {
       {/* Top Banner - Catoca Diamonds */}
       <div className="relative h-64 w-full overflow-hidden bg-slate-900">
         <img
-          src="/assets/images/catoca_diamond_hero_1792306524766.jpg"
-          alt="Catoca Diamantes"
+          src="/assets/aistudio/IMG_1491_c7e2abb2.jpeg"
+          alt="Catoca Diamantes - Lavra a Céu Aberto"
           className="w-full h-full object-cover opacity-90 scale-105"
           referrerPolicy="no-referrer"
         />
@@ -80,10 +80,14 @@ export const LoginPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Branding Badge */}
+        {/* Branding Badge with Official Catoca Logo */}
         <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/30 text-white">
-            <Gem size={24} />
+          <div className="w-14 h-14 rounded-2xl bg-white border-2 border-white/80 p-1 flex items-center justify-center shadow-xl shadow-sky-950/50 overflow-hidden shrink-0">
+            <img
+              src="/assets/aistudio/IMG_1487_83d7197c.jpeg"
+              alt="Catoca Logo Oficial"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">

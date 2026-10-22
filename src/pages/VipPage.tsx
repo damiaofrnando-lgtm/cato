@@ -155,7 +155,7 @@ export const VipPage: React.FC = () => {
                     loading="lazy"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/assets/images/catoca_miner_helper_1792584628027.jpg';
+                      (e.target as HTMLImageElement).src = '/assets/aistudio/IMG_1488_7432a176.jpeg';
                     }}
                   />
                   <div className="absolute top-1 left-1 w-6 h-6 rounded-lg overflow-hidden border border-white/60 shadow-xs bg-black/40">

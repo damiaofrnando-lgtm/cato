@@ -127,35 +127,96 @@ export const TasksPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Prominent 24-Hour Countdown Clock Banner */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 text-white relative overflow-hidden shadow-inner">
-            <div className="flex items-center justify-between mb-2">
+          {/* Circular 24-Hour Countdown Clock Dial */}
+          <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-sky-950 to-slate-900 text-white relative overflow-hidden shadow-xl flex flex-col items-center justify-center">
+            {/* Subtle radial glow */}
+            <div className="absolute inset-0 bg-radial from-sky-500/20 via-transparent to-transparent pointer-events-none" />
+
+            <div className="flex items-center justify-between w-full mb-3 px-1 relative z-10">
               <span className="text-[11px] font-extrabold uppercase text-sky-300 flex items-center gap-1.5 font-mono">
-                <Clock size={13} className="text-sky-400 animate-spin" />
-                <span>Ciclo de Lucro Automático (24h)</span>
+                <Clock size={13} className="text-sky-400 animate-spin" style={{ animationDuration: '8s' }} />
+                <span>Ciclo de Lucro 24h</span>
               </span>
-              <span className="text-[10px] text-slate-300 font-mono">
-                {progressPercent}% decorrido
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Automático</span>
               </span>
             </div>
 
-            {/* Countdown Numbers */}
-            <div className="text-center py-2">
-              <span className="text-3xl font-black tracking-widest font-mono text-white drop-shadow-md">
-                {countdownFormatted}
-              </span>
-              <p className="text-[11px] text-sky-200 font-medium mt-1">
-                Ao término das 24h, o lucro diário é depositado direto na sua conta!
-              </p>
+            {/* SVG Circular Chronometer Gauge */}
+            <div className="relative w-56 h-56 flex items-center justify-center my-2">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 220 220">
+                <defs>
+                  <linearGradient id="catocaTimerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#38bdf8" />
+                    <stop offset="50%" stopColor="#60a5fa" />
+                    <stop offset="100%" stopColor="#34d399" />
+                  </linearGradient>
+                  <filter id="timerGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#38bdf8" floodOpacity="0.6" />
+                  </filter>
+                </defs>
+
+                {/* Outer decorative dotted ring */}
+                <circle
+                  cx="110"
+                  cy="110"
+                  r="102"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.08)"
+                  strokeWidth="1"
+                  strokeDasharray="4 6"
+                />
+
+                {/* Background Track Circle */}
+                <circle
+                  cx="110"
+                  cy="110"
+                  r="86"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.12)"
+                  strokeWidth="10"
+                />
+
+                {/* Animated Circular Progress Ring */}
+                <circle
+                  cx="110"
+                  cy="110"
+                  r="86"
+                  fill="none"
+                  stroke="url(#catocaTimerGradient)"
+                  strokeWidth="11"
+                  strokeLinecap="round"
+                  strokeDasharray={540.35}
+                  strokeDashoffset={540.35 - (540.35 * Math.min(100, Math.max(1, progressPercent))) / 100}
+                  filter="url(#timerGlow)"
+                  className="transition-all duration-1000 ease-linear"
+                />
+              </svg>
+
+              {/* Center Content of the Round Clock */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none select-none">
+                <div className="w-7 h-7 rounded-full bg-sky-500/20 border border-sky-400/40 flex items-center justify-center mb-1 text-sky-300 shadow-sm animate-pulse">
+                  <Gem size={14} />
+                </div>
+
+                <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-sky-300">
+                  TEMPO RESTANTE
+                </span>
+
+                <div className="text-2xl sm:text-[26px] font-black tracking-wider font-mono text-white drop-shadow-md my-0.5">
+                  {countdownFormatted}
+                </div>
+
+                <span className="text-[10px] text-emerald-300 font-mono font-extrabold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full mt-0.5">
+                  {progressPercent}% CONCLUÍDO
+                </span>
+              </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 rounded-full bg-white/20 overflow-hidden mt-3">
-              <div
-                className="h-full bg-gradient-to-r from-sky-400 via-blue-400 to-emerald-400 transition-all duration-1000 rounded-full"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
+            <p className="text-[11px] text-sky-200 text-center font-medium mt-1">
+              Ao término das 24h, o lucro do diamante é creditado automaticamente!
+            </p>
           </div>
 
           {/* Profit Breakdown for this Diamond */}
@@ -199,30 +260,70 @@ export const TasksPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* User Has No VIP Diamond - Call To Action with Paused Clock */
+        /* User Has No VIP Diamond - Round Circular Clock in Standby Mode */
         <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-md text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto shadow-inner border border-slate-200">
-            <Clock size={32} />
-          </div>
-
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-mono text-[10px] font-bold mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span>RELÓGIO PAUSADO</span>
+          {/* Circular Standby Clock Dial */}
+          <div className="p-5 rounded-3xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 text-white relative overflow-hidden shadow-xl flex flex-col items-center justify-center">
+            <div className="flex items-center justify-between w-full mb-2 px-1">
+              <span className="text-[11px] font-extrabold uppercase text-amber-300 flex items-center gap-1.5 font-mono">
+                <Clock size={13} className="text-amber-400" />
+                <span>Relógio Circular 24h</span>
+              </span>
+              <span className="text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono">
+                Aguardando Plano
+              </span>
             </div>
-            <h3 className="text-base font-black text-slate-900">
-              O Relógio Só Conta Após a Compra de um Plano
-            </h3>
-            <p className="text-xs text-slate-600 mt-1.5 max-w-xs mx-auto leading-relaxed">
-              Enquanto você não comprar um diamante VIP, o relógio permanece parado. Assim que adquirir um plano, a contagem regressiva de 24h é iniciada para obter lucro automático!
+
+            {/* Circular Gauge */}
+            <div className="relative w-48 h-48 flex items-center justify-center my-2">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="78"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.1)"
+                  strokeWidth="8"
+                />
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="78"
+                  fill="none"
+                  stroke="#f59e0b"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="490"
+                  strokeDashoffset="420"
+                  className="opacity-40"
+                />
+              </svg>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
+                  CONTADOR 24H
+                </span>
+                <div className="text-2xl font-black font-mono tracking-widest text-slate-300 my-1">
+                  --:--:--
+                </div>
+                <span className="text-[9.5px] text-amber-300 font-medium">
+                  Ativação por Plano
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-300 text-center font-medium">
+              O relógio começa a rodar assim que você adquirir um plano VIP.
             </p>
           </div>
 
-          {/* Frozen Timer Display */}
-          <div className="p-3.5 rounded-2xl bg-slate-900 text-white max-w-xs mx-auto">
-            <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Contador 24h</span>
-            <span className="text-2xl font-black font-mono tracking-widest text-slate-400">--:--:--</span>
-            <span className="text-[10.5px] text-amber-300 block mt-1 font-medium">Aguardando ativação de plano</span>
+          <div>
+            <h3 className="text-base font-black text-slate-900">
+              Inicie seu Ciclo Automático de 24 Horas
+            </h3>
+            <p className="text-xs text-slate-600 mt-1 max-w-xs mx-auto leading-relaxed">
+              Adquira uma concessão diamantífera de Catoca. O lucro é depositado pontualmente a cada 24h direto na sua conta durante 120 dias!
+            </p>
           </div>
 
           {/* Diamond Showcase Preview */}

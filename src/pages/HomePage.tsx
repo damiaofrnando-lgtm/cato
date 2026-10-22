@@ -15,7 +15,9 @@ import {
   ShieldCheck, 
   Clock,
   Layers,
-  Award
+  Award,
+  Gift,
+  Headphones
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
@@ -64,11 +66,11 @@ export const HomePage: React.FC = () => {
       action: () => openModal('wealth_fund'),
     },
     {
-      id: 'lucky',
-      label: 'Roleta de\nDiamantes',
-      icon: Sparkles,
+      id: 'daily_reward',
+      label: 'Bónus\nDiário',
+      icon: Gift,
       color: 'from-amber-400 to-orange-500',
-      action: () => openModal('lucky_draw'),
+      action: () => openModal('daily_reward'),
     },
     {
       id: 'news',
@@ -78,11 +80,11 @@ export const HomePage: React.FC = () => {
       action: () => navigateTo('/pages/news/index'),
     },
     {
-      id: 'agent',
-      label: 'Carreira\nde Lavra',
-      icon: Briefcase,
+      id: 'service',
+      label: 'Apoio ao\nOperador',
+      icon: Headphones,
       color: 'from-indigo-500 to-blue-700',
-      action: () => navigateTo('/pages/agent/index'),
+      action: () => openModal('customer_service'),
     },
     {
       id: 'download',
@@ -261,12 +263,12 @@ export const HomePage: React.FC = () => {
       {/* Hero Banner Showcase - Catoca Diamonds */}
       <div className="relative h-44 rounded-3xl overflow-hidden shadow-md border border-slate-200">
         <img
-          src="/assets/images/catoca_diamond_hero_1792306524766.jpg"
-          alt="Sociedade Mineira de Catoca"
+          src="/assets/aistudio/IMG_1491_c7e2abb2.jpeg"
+          alt="Sociedade Mineira de Catoca - Lavra a Céu Aberto"
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = '/assets/images/catoca_heavy_truck_1792584629309.jpg';
+            (e.target as HTMLImageElement).src = '/assets/aistudio/IMG_1488_7432a176.jpeg';
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-end">

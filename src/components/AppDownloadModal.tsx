@@ -34,10 +34,12 @@ export const AppDownloadModal: React.FC = () => {
         </div>
 
         <div className="py-4 space-y-4">
-          <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 p-0.5 shadow-md flex items-center justify-center">
-            <div className="w-full h-full bg-white rounded-[22px] flex items-center justify-center">
-              <Gem size={36} className="text-sky-600" />
-            </div>
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-white border-2 border-sky-200 p-1.5 shadow-md flex items-center justify-center overflow-hidden">
+            <img
+              src="/assets/aistudio/IMG_1487_83d7197c.jpeg"
+              alt="Catoca Logo Oficial"
+              className="w-full h-full object-contain"
+            />
           </div>
 
           <div>
