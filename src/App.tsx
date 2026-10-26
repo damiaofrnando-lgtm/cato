@@ -9,6 +9,9 @@ import { WithdrawModal } from './components/WithdrawModal';
 import { WealthFundModal } from './components/WealthFundModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
 import { DailyRewardModal } from './components/DailyRewardModal';
+import { BindIbanModal } from './components/BindIbanModal';
+import { PaymentPasswordModal } from './components/PaymentPasswordModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Pages
 import { RegisterPage } from './pages/RegisterPage';
@@ -102,6 +105,8 @@ const AppContent: React.FC = () => {
         {activeModal?.name === 'daily_reward' && <DailyRewardModal />}
         {activeModal?.name === 'wealth_fund' && <WealthFundModal />}
         {activeModal?.name === 'app_download' && <AppDownloadModal />}
+        {activeModal?.name === 'bind_iban' && <BindIbanModal />}
+        {activeModal?.name === 'payment_password' && <PaymentPasswordModal />}
       </div>
     </div>
   );
@@ -109,8 +114,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

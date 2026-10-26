@@ -17,7 +17,8 @@ import {
   Layers,
   Award,
   Gift,
-  Headphones
+  Headphones,
+  MessageCircle
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
@@ -31,6 +32,10 @@ export const HomePage: React.FC = () => {
     tasksRemainingToday, 
     countdownFormatted, 
     isClockActive,
+    isSunday,
+    isClockPausedForSunday,
+    managerWhatsAppUrl,
+    whatsappGroupUrl,
     announcements,
     miningTasks,
     concessionStats
@@ -96,10 +101,9 @@ export const HomePage: React.FC = () => {
   ];
 
   const featuredTask = miningTasks.length > 0 ? miningTasks[0] : null;
-  const progressPercent = Math.min(
-    100,
-    Math.round(((user?.tasksCompletedToday ?? 0) / currentVipTier.dailyTasks) * 100)
-  );
+  const progressPercent = currentVipTier.dailyTasks > 0
+    ? Math.min(100, Math.round(((user?.tasksCompletedToday ?? 0) / currentVipTier.dailyTasks) * 100))
+    : 0;
 
   return (
     <div className="pb-28 pt-2 px-4 space-y-4 max-w-md mx-auto">
@@ -202,46 +206,70 @@ export const HomePage: React.FC = () => {
       <div 
         onClick={() => navigateTo(isClockActive ? '/pages/tasks/index' : '/pages/vip/index')}
         className={`cursor-pointer diamond-card rounded-2xl p-3.5 border shadow-sm flex items-center justify-between transition-all ${
-          isClockActive 
+          isSunday && isClockActive
+            ? 'bg-gradient-to-r from-amber-50 via-white to-orange-50 border-amber-300'
+            : isClockActive 
             ? 'bg-gradient-to-r from-sky-50 via-white to-blue-50 border-sky-200' 
             : 'bg-gradient-to-r from-slate-50 via-white to-amber-50/60 border-slate-200 hover:border-amber-300'
         }`}
       >
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md ${
-            isClockActive ? 'bg-gradient-to-tr from-sky-500 to-blue-600' : 'bg-gradient-to-tr from-slate-400 to-slate-600'
+            isSunday && isClockActive
+              ? 'bg-gradient-to-tr from-amber-500 to-orange-600'
+              : isClockActive 
+              ? 'bg-gradient-to-tr from-sky-500 to-blue-600' 
+              : 'bg-gradient-to-tr from-slate-400 to-slate-600'
           }`}>
-            <Clock size={20} className={isClockActive ? 'animate-spin' : ''} style={{ animationDuration: '10s' }} />
+            <Clock size={20} className={isClockActive && !isSunday ? 'animate-spin' : ''} style={{ animationDuration: '10s' }} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                isClockActive ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-700'
+                isSunday && isClockActive
+                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                  : isClockActive 
+                  ? 'bg-sky-100 text-sky-700' 
+                  : 'bg-slate-100 text-slate-700'
               }`}>
-                {isClockActive ? 'Extração de Diamantes 24h' : 'Relógio Inativo'}
+                {isSunday && isClockActive ? 'Domingo · Relógio Pausado' : isClockActive ? 'Extração de Diamantes 24h' : 'Relógio Inativo'}
               </span>
-              {isClockActive ? (
+              {isSunday && isClockActive ? (
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+              ) : isClockActive ? (
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               ) : (
                 <span className="text-[10px] text-amber-600 font-bold font-mono">Sem Plano</span>
               )}
             </div>
             <p className="text-xs font-bold text-slate-800 mt-0.5">
-              {isClockActive ? 'Próximo crédito automático em:' : 'Inicia 24h após comprar um plano:'}
+              {isSunday && isClockActive 
+                ? 'Manutenção preventiva · Retoma 2ª feira:' 
+                : isClockActive 
+                ? 'Próximo crédito automático em:' 
+                : 'Inicia 24h após comprar um plano:'}
             </p>
           </div>
         </div>
 
         <div className="text-right">
           <div className={`px-2.5 py-1 rounded-lg font-mono font-black text-sm tracking-wider shadow ${
-            isClockActive ? 'bg-slate-900 text-sky-300' : 'bg-slate-800 text-slate-300'
+            isSunday && isClockActive
+              ? 'bg-slate-900 text-amber-300'
+              : isClockActive 
+              ? 'bg-slate-900 text-sky-300' 
+              : 'bg-slate-800 text-slate-300'
           }`}>
             {isClockActive ? countdownFormatted : '--:--:--'}
           </div>
           <span className={`text-[10px] font-bold block mt-0.5 ${
-            isClockActive ? 'text-emerald-600' : 'text-sky-600 underline'
+            isSunday && isClockActive
+              ? 'text-amber-700'
+              : isClockActive 
+              ? 'text-emerald-600' 
+              : 'text-sky-600 underline'
           }`}>
-            {isClockActive ? 'Lucro 100% Automático' : 'Comprar Diamante VIP'}
+            {isSunday && isClockActive ? 'Retoma na Segunda' : isClockActive ? 'Lucro 100% Automático' : 'Comprar Diamante VIP'}
           </span>
         </div>
       </div>
@@ -310,6 +338,45 @@ export const HomePage: React.FC = () => {
             </button>
           );
         })}
+      </div>
+
+      {/* Official WhatsApp Discussion Group & Manager Banner */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xs flex items-center justify-center text-white border border-white/20 shrink-0">
+            <MessageCircle size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9.5px] uppercase font-mono font-bold text-emerald-200">
+                Sociedade Mineira de Catoca
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+            <p className="text-xs font-black text-white leading-tight mt-0.5">
+              Grupo de Discussão & Gerente Oficial
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <a
+            href={whatsappGroupUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-white text-emerald-800 font-black text-[11px] shadow-xs hover:bg-emerald-50 active:scale-95 transition-all text-center"
+          >
+            Grupo Discussão
+          </a>
+          <a
+            href={managerWhatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-emerald-950/70 text-emerald-200 border border-emerald-400/40 font-black text-[11px] shadow-xs hover:bg-emerald-900 active:scale-95 transition-all text-center"
+          >
+            Gerente
+          </a>
+        </div>
       </div>
 
       {/* Featured Automatic 24h Diamond Plan & Profit */}

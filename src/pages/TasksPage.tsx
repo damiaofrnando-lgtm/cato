@@ -29,7 +29,11 @@ export const TasksPage: React.FC = () => {
     countdownSeconds,
     triggerSimulated24hProfit,
     lastAutoProfit,
-    user
+    user,
+    isSunday,
+    isClockPausedForSunday,
+    simulateSunday,
+    toggleSimulateSunday
   } = useApp();
 
   const [simulating, setSimulating] = useState(false);
@@ -91,6 +95,33 @@ export const TasksPage: React.FC = () => {
         )}
       </div>
 
+      {/* Sunday Operational Rest Alert */}
+      {isSunday && (
+        <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-50 to-orange-500/10 border-2 border-amber-300 text-amber-950 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Clock size={17} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase text-amber-700 tracking-wider font-mono block">
+                  Repouso Operacional da Concessão
+                </span>
+                <h4 className="text-xs font-black text-amber-950">
+                  Domingo: Manutenção Preventiva das Usinas
+                </h4>
+              </div>
+            </div>
+            <span className="text-[9.5px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-300 font-mono">
+              Pausado
+            </span>
+          </div>
+          <p className="text-xs text-amber-900/90 leading-relaxed font-medium">
+            <strong>Aviso de Operação: </strong>Aos domingos não são realizadas tarefas nem extrações na mina de Catoca. O relógio de 24 horas parou de contar e dará sequência normalmente na segunda-feira às 00:00!
+          </p>
+        </div>
+      )}
+
       {/* Main Active Diamond Card & 24h Countdown Clock */}
       {hasActiveDiamond ? (
         <div className="p-5 rounded-3xl bg-white border border-sky-200 shadow-md relative overflow-hidden space-y-4">
@@ -112,9 +143,13 @@ export const TasksPage: React.FC = () => {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Plano Ativo
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                  isSunday 
+                    ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isSunday ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+                  {isSunday ? 'Pausa de Domingo' : 'Plano Ativo'}
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">120 DIAS</span>
               </div>
@@ -128,18 +163,30 @@ export const TasksPage: React.FC = () => {
           </div>
 
           {/* Circular 24-Hour Countdown Clock Dial */}
-          <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-sky-950 to-slate-900 text-white relative overflow-hidden shadow-xl flex flex-col items-center justify-center">
+          <div className={`p-6 rounded-3xl text-white relative overflow-hidden shadow-xl flex flex-col items-center justify-center transition-all ${
+            isSunday 
+              ? 'bg-gradient-to-b from-slate-950 via-amber-950/60 to-slate-900' 
+              : 'bg-gradient-to-b from-slate-900 via-sky-950 to-slate-900'
+          }`}>
             {/* Subtle radial glow */}
-            <div className="absolute inset-0 bg-radial from-sky-500/20 via-transparent to-transparent pointer-events-none" />
+            <div className={`absolute inset-0 pointer-events-none ${
+              isSunday ? 'bg-radial from-amber-500/15 via-transparent to-transparent' : 'bg-radial from-sky-500/20 via-transparent to-transparent'
+            }`} />
 
             <div className="flex items-center justify-between w-full mb-3 px-1 relative z-10">
-              <span className="text-[11px] font-extrabold uppercase text-sky-300 flex items-center gap-1.5 font-mono">
-                <Clock size={13} className="text-sky-400 animate-spin" style={{ animationDuration: '8s' }} />
-                <span>Ciclo de Lucro 24h</span>
+              <span className={`text-[11px] font-extrabold uppercase flex items-center gap-1.5 font-mono ${
+                isSunday ? 'text-amber-300' : 'text-sky-300'
+              }`}>
+                <Clock size={13} className={isSunday ? 'text-amber-400' : 'text-sky-400 animate-spin'} style={{ animationDuration: '8s' }} />
+                <span>{isSunday ? 'Relógio Pausado (Domingo)' : 'Ciclo de Lucro 24h'}</span>
               </span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Automático</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono flex items-center gap-1 ${
+                isSunday 
+                  ? 'text-amber-300 bg-amber-500/20 border border-amber-500/40' 
+                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isSunday ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                <span>{isSunday ? 'Retoma 2ª Feira' : 'Automático'}</span>
               </span>
             </div>
 
@@ -152,8 +199,13 @@ export const TasksPage: React.FC = () => {
                     <stop offset="50%" stopColor="#60a5fa" />
                     <stop offset="100%" stopColor="#34d399" />
                   </linearGradient>
+                  <linearGradient id="catocaSundayGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="50%" stopColor="#f97316" />
+                    <stop offset="100%" stopColor="#d97706" />
+                  </linearGradient>
                   <filter id="timerGlow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#38bdf8" floodOpacity="0.6" />
+                    <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor={isSunday ? '#f59e0b' : '#38bdf8'} floodOpacity="0.6" />
                   </filter>
                 </defs>
 
@@ -163,7 +215,7 @@ export const TasksPage: React.FC = () => {
                   cy="110"
                   r="102"
                   fill="none"
-                  stroke="rgba(255, 255, 255, 0.08)"
+                  stroke={isSunday ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.08)'}
                   strokeWidth="1"
                   strokeDasharray="4 6"
                 />
@@ -184,7 +236,7 @@ export const TasksPage: React.FC = () => {
                   cy="110"
                   r="86"
                   fill="none"
-                  stroke="url(#catocaTimerGradient)"
+                  stroke={isSunday ? 'url(#catocaSundayGradient)' : 'url(#catocaTimerGradient)'}
                   strokeWidth="11"
                   strokeLinecap="round"
                   strokeDasharray={540.35}
@@ -196,26 +248,38 @@ export const TasksPage: React.FC = () => {
 
               {/* Center Content of the Round Clock */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none select-none">
-                <div className="w-7 h-7 rounded-full bg-sky-500/20 border border-sky-400/40 flex items-center justify-center mb-1 text-sky-300 shadow-sm animate-pulse">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1 shadow-sm ${
+                  isSunday ? 'bg-amber-500/20 border border-amber-400/40 text-amber-300' : 'bg-sky-500/20 border border-sky-400/40 text-sky-300 animate-pulse'
+                }`}>
                   <Gem size={14} />
                 </div>
 
-                <span className="text-[10px] uppercase font-mono font-bold tracking-widest text-sky-300">
-                  TEMPO RESTANTE
+                <span className={`text-[10px] uppercase font-mono font-bold tracking-widest ${
+                  isSunday ? 'text-amber-300' : 'text-sky-300'
+                }`}>
+                  {isSunday ? 'PAUSA OPERACIONAL' : 'TEMPO RESTANTE'}
                 </span>
 
                 <div className="text-2xl sm:text-[26px] font-black tracking-wider font-mono text-white drop-shadow-md my-0.5">
                   {countdownFormatted}
                 </div>
 
-                <span className="text-[10px] text-emerald-300 font-mono font-extrabold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full mt-0.5">
-                  {progressPercent}% CONCLUÍDO
-                </span>
+                {isSunday ? (
+                  <span className="text-[9.5px] text-amber-300 font-mono font-black bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded-full mt-0.5">
+                    RETOMA 2ª FEIRA 00:00
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-emerald-300 font-mono font-extrabold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full mt-0.5">
+                    {progressPercent}% CONCLUÍDO
+                  </span>
+                )}
               </div>
             </div>
 
-            <p className="text-[11px] text-sky-200 text-center font-medium mt-1">
-              Ao término das 24h, o lucro do diamante é creditado automaticamente!
+            <p className={`text-[11px] text-center font-medium mt-1 ${isSunday ? 'text-amber-200' : 'text-sky-200'}`}>
+              {isSunday 
+                ? 'O relógio parou para o domingo de manutenção e dará sequência na segunda-feira!'
+                : 'Ao término das 24h, o lucro do diamante é creditado automaticamente!'}
             </p>
           </div>
 
@@ -251,11 +315,15 @@ export const TasksPage: React.FC = () => {
           <div className="pt-1">
             <button
               onClick={handleSimulateCycle}
-              disabled={simulating}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-98"
+              disabled={simulating || isSunday}
+              className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-98 border ${
+                isSunday 
+                  ? 'bg-amber-50 border-amber-200 text-amber-800 opacity-80 cursor-not-allowed' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+              }`}
             >
               <RefreshCw size={13} className={simulating ? 'animate-spin' : ''} />
-              <span>Simular Término de 24h (Testar Crédito Automático)</span>
+              <span>{isSunday ? 'Domingo: Tarefas Suspensas (Retoma Segunda-Feira)' : 'Simular Término de 24h (Testar Crédito Automático)'}</span>
             </button>
           </div>
         </div>
@@ -427,6 +495,25 @@ export const TasksPage: React.FC = () => {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Simulator Switcher for Instant Sunday Mode Testing */}
+      <div className="pt-2 pb-1 flex flex-col items-center justify-center space-y-1">
+        <button
+          type="button"
+          onClick={toggleSimulateSunday}
+          className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all flex items-center gap-1.5 shadow-2xs active:scale-95 cursor-pointer ${
+            simulateSunday 
+              ? 'bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-300' 
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Clock size={12} className={simulateSunday ? 'text-amber-600' : 'text-slate-400'} />
+          <span>Modo Domingo (Teste): <strong className={simulateSunday ? 'text-amber-700' : 'text-slate-700'}>{simulateSunday ? 'ATIVADO (Pausado)' : 'Desativado'}</strong></span>
+        </button>
+        <span className="text-[9.5px] text-slate-400">
+          {simulateSunday ? 'Simulando domingo: o relógio está pausado e retomará na 2ª feira.' : 'Alternar para simular o comportamento de domingo em qualquer dia.'}
+        </span>
       </div>
     </div>
   );

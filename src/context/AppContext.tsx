@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Transaction, UserInvestment, DiamondTask, Language, VIPTier, Announcement, ConcessionStats } from '../types';
-import { VIP_TIERS, INITIAL_DIAMOND_TASKS, FUND_PLANS } from '../data/mockData';
+import { VIP_TIERS, INITIAL_DIAMOND_TASKS, FUND_PLANS, VIP_DAILY_PRESENCE_BONUS } from '../data/mockData';
 import { translations } from '../locales/translations';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import {
@@ -38,14 +38,17 @@ interface AppContextType {
   currentRoute: string;
   navigateTo: (route: string) => void;
   routeParams: Record<string, string>;
-  register: (phone: string, phoneCode: string, email: string, password: string, inviteCode: string) => Promise<{ success: boolean; message?: string }>;
+  register: (phone: string, phoneCode: string, email: string, password: string, inviteCode: string, name?: string) => Promise<{ success: boolean; message?: string }>;
   login: (identifier: string, phoneCode: string, password: string) => Promise<{ success: boolean; message?: string }>;
   demoLogin: () => Promise<void> | void;
   logout: () => void;
   claimDiamondLot: (taskId: string) => { success: boolean; reward: number; message: string };
   completedTaskIds: string[];
   recharge: (amount: number, method: string, proofUrl?: string, senderInfo?: string) => Promise<{ success: boolean; message: string }>;
-  withdraw: (amount: number, accountType: string, accountNumber: string, accountName: string) => Promise<{ success: boolean; message: string }>;
+  withdraw: (amount: number, accountType: string, accountNumber: string, accountName: string, pin?: string) => Promise<{ success: boolean; message: string }>;
+  bindBankAccount: (bankName: string, accountName: string, accountNumber: string) => Promise<{ success: boolean; message: string }>;
+  setPaymentPassword: (password: string) => Promise<{ success: boolean; message: string }>;
+  claimDailyPresenceReward: () => Promise<{ success: boolean; amount: number; message: string }>;
   upgradeVip: (tierId: number) => Promise<{ success: boolean; message: string }>;
   triggerSimulated24hProfit: () => Promise<{ success: boolean; profit: number; message: string }>;
   lastAutoProfit: { amount: number; time: string; tierName: string } | null;
@@ -67,6 +70,12 @@ interface AppContextType {
   countdownSeconds: number;
   countdownFormatted: string;
   isClockActive: boolean;
+  isSunday: boolean;
+  isClockPausedForSunday: boolean;
+  simulateSunday: boolean;
+  toggleSimulateSunday: () => void;
+  managerWhatsAppUrl: string;
+  whatsappGroupUrl: string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -110,6 +119,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubStats();
     };
   }, []);
+
+  // Official WhatsApp Links
+  const managerWhatsAppUrl = 'https://wa.me/message/RYWEG4XDAU64P1';
+  const whatsappGroupUrl = 'https://chat.whatsapp.com/EytIiPqiWd1B5RvLk3kDKY?s=cl&p=i&mlu=4&ilr=4&iam=2';
+
+  // Sunday operational rest & maintenance state
+  const [simulateSunday, setSimulateSunday] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('catoca_simulate_sunday') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSimulateSunday = () => {
+    setSimulateSunday((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('catoca_simulate_sunday', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const isRealSunday = new Date().getDay() === 0;
+  const isSunday = isRealSunday || simulateSunday;
 
   // 24-hour cycle timer state
   const [cycleTargetTime, setCycleTargetTime] = useState<number>(0);
@@ -311,12 +348,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const isClockActive = !!(user && user.vipLevel > 0);
+  const isClockPausedForSunday = isSunday && isClockActive;
 
   // 24-hour countdown clock effect: ONLY runs after purchasing a VIP diamond plan
   useEffect(() => {
     // If no plan has been purchased, the clock CANNOT count down
     if (!user || user.vipLevel <= 0 || !cycleTargetTime) {
       setCountdownSeconds(0);
+      return;
+    }
+
+    // Regra: Nos domingos não há tarefas e o relógio para de contar, dando sequência na segunda-feira!
+    if (isSunday) {
+      const now = Date.now();
+      const diff = Math.max(1, Math.floor((cycleTargetTime - now) / 1000));
+      setCountdownSeconds(diff);
       return;
     }
 
@@ -336,7 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const timer = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(timer);
-  }, [cycleTargetTime, user?.vipLevel]);
+  }, [cycleTargetTime, user?.vipLevel, isSunday]);
 
   // Format countdown as HH:MM:SS
   const formatCountdown = (totalSec: number) => {
@@ -421,66 +467,99 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return `$${amount.toLocaleString('en-US')}`;
   };
 
+  // Helper for human-friendly authentication and database error messages
+  const formatAuthError = (err: any): string => {
+    const code = err?.code || '';
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return 'Este endereço de e-mail já está cadastrado. Inicie sessão com a sua palavra-passe ou recupere o acesso.';
+      case 'auth/invalid-email':
+        return 'O formato do endereço de e-mail é inválido. Verifique o e-mail digitado.';
+      case 'auth/weak-password':
+        return 'A palavra-passe deve conter pelo menos 6 caracteres.';
+      case 'auth/user-not-found':
+        return 'Nenhuma conta encontrada com este e-mail. Crie uma nova conta.';
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Palavra-passe incorreta ou credenciais inválidas. Verifique os dados inseridos.';
+      case 'auth/too-many-requests':
+        return 'Muitas tentativas falhadas. O acesso foi bloqueado temporariamente por segurança. Tente mais tarde.';
+      case 'auth/network-request-failed':
+        return 'Falha de comunicação com os servidores. Verifique a sua conexão de internet.';
+      case 'auth/user-disabled':
+        return 'Esta conta de operador foi temporariamente suspensa pela administração.';
+      case 'permission-denied':
+        return 'Acesso negado pelas permissões de segurança da base de dados.';
+      case 'unavailable':
+        return 'O serviço de dados está temporariamente indisponível. Tente novamente em instantes.';
+      default:
+        if (err?.message && typeof err.message === 'string') {
+          if (err.message.includes('offline')) {
+            return 'Não foi possível comunicar com o servidor. Verifique a sua ligação à internet.';
+          }
+          return err.message;
+        }
+        return 'Ocorreu um erro ao processar a autenticação. Tente novamente.';
+    }
+  };
+
   // 3. Register New Operator into Live Firebase Auth and Firestore Database
-  const register = async (phone: string, phoneCode: string, email: string, password: string, inviteCode: string) => {
+  const register = async (
+    phone: string,
+    phoneCode: string,
+    email: string,
+    password: string,
+    inviteCode: string,
+    name?: string
+  ) => {
     try {
       const cleanPhone = phone.trim().replace(/\s+/g, '');
       const cleanEmail = email.trim().toLowerCase();
+      const cleanName = (name || '').trim();
 
-      // Check if phone is already registered in Firestore
-      const qPhone = query(collection(db, 'users'), where('phone', '==', cleanPhone));
-      const snapPhone = await getDocs(qPhone);
-      if (!snapPhone.empty) {
-        return { success: false, message: 'Este número de telefone já está cadastrado na Concessão Catoca. Faça login ou use outro número.' };
+      if (!cleanPhone) {
+        return { success: false, message: 'O número de telefone é obrigatório.' };
+      }
+      if (!cleanEmail || !cleanEmail.includes('@')) {
+        return { success: false, message: 'Por favor, informe um endereço de e-mail válido.' };
+      }
+      if (!password || password.length < 6) {
+        return { success: false, message: 'A palavra-passe deve conter pelo menos 6 caracteres.' };
       }
 
-      // Check if email is already registered in Firestore
-      const qEmail = query(collection(db, 'users'), where('email', '==', cleanEmail));
-      const snapEmail = await getDocs(qEmail);
-      if (!snapEmail.empty) {
-        return { success: false, message: 'Este endereço de e-mail já está cadastrado. Faça login ou use outro e-mail.' };
+      // 1. Verify in Firestore that phone number is not duplicated
+      try {
+        const qPhone = query(collection(db, 'users'), where('phone', '==', cleanPhone));
+        const snapPhone = await getDocs(qPhone);
+        if (!snapPhone.empty) {
+          return {
+            success: false,
+            message: 'Este número de telefone já está cadastrado na Concessão Catoca. Faça login ou utilize outro número.',
+          };
+        }
+      } catch (checkErr) {
+        console.warn('Aviso na checagem de telefone único:', checkErr);
       }
 
-      // 1. Create User in Firebase Authentication
+      // 2. Create User in Firebase Authentication
       let authUid: string;
       try {
         const userCred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         authUid = userCred.user.uid;
       } catch (authErr: any) {
-        if (authErr?.code === 'auth/email-already-in-use') {
-          try {
-            const userCred = await signInWithEmailAndPassword(auth, cleanEmail, password);
-            authUid = userCred.user.uid;
-          } catch {
-            return {
-              success: false,
-              message: 'Este e-mail já está registrado na autenticação. Faça login com sua senha.',
-            };
-          }
-        } else if (authErr?.code === 'auth/weak-password') {
-          return {
-            success: false,
-            message: 'A senha deve possuir pelo menos 6 caracteres.',
-          };
-        } else if (authErr?.code === 'auth/invalid-email') {
-          return {
-            success: false,
-            message: 'O formato do endereço de e-mail é inválido.',
-          };
-        } else {
-          console.warn('Falha no Firebase Auth createUser, usando identificador único da concessão:', authErr);
-          authUid = `CATOCA-${Math.floor(100000 + Math.random() * 900000)}`;
-        }
+        return {
+          success: false,
+          message: formatAuthError(authErr),
+        };
       }
 
-      const newUserId = authUid;
-
+      // 3. Construct user document (NEVER storing plaintext passwords in Firestore)
       const newUser: User = {
-        id: newUserId,
+        id: authUid,
+        name: cleanName || `Operador ${cleanPhone.slice(-4)}`,
         phone: cleanPhone,
         phoneCode,
         email: cleanEmail,
-        password,
         inviteCode: Math.random().toString(36).substring(2, 10).toLowerCase(),
         invitedBy: inviteCode.trim() || '1fg9kafci6',
         vipLevel: 0,
@@ -500,24 +579,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cycleTargetTime: 0,
       };
 
-      // 2. Write user document to Firestore (using Auth UID as key)
-      await setDoc(doc(db, 'users', newUserId), newUser);
+      // 4. Write user document to Firestore
+      await setDoc(doc(db, 'users', authUid), newUser);
 
-      // 3. Write welcome transaction to Firestore
+      // 5. Write welcome registration bonus transaction to Firestore
       const txId = `tx-welcome-${Date.now()}`;
       const welcomeTx: Transaction = {
         id: txId,
-        userId: newUserId,
+        userId: authUid,
         type: 'referral_bonus',
         amount: 650,
         status: 'completed',
         date: new Date().toLocaleDateString('pt-BR'),
         timestamp: Date.now(),
-        note: `Saldo Inicial de Cadastro Catoca: 650 Kz (Convite: ${inviteCode.trim() || '1fg9kafci6'})`,
+        note: `Saldo Inicial de Cadastro Catoca: +650 Kz (Convite: ${inviteCode.trim() || '1fg9kafci6'})`,
       };
       await setDoc(doc(db, 'transactions', txId), welcomeTx);
 
-      localStorage.setItem('catoca_active_user_id', newUserId);
+      localStorage.setItem('catoca_active_user_id', authUid);
       setUser(newUser);
       navigateTo('/pages/index/index');
       return { success: true };
@@ -525,7 +604,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Erro no registro Firestore/Auth:', err);
       return {
         success: false,
-        message: err?.message ? `Erro no banco de dados: ${err.message}` : 'Erro ao cadastrar credencial.',
+        message: formatAuthError(err),
       };
     }
   };
@@ -533,96 +612,110 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 4. Login Operator with live Firebase Auth & Firestore validation
   const login = async (identifier: string, _phoneCode: string, password: string) => {
     try {
-      const cleanId = identifier.trim().toLowerCase();
+      const cleanId = identifier.trim();
       const isEmail = cleanId.includes('@');
-      const cleanPhone = identifier.trim().replace(/\s+/g, '');
+      const cleanPhone = cleanId.replace(/\s+/g, '');
 
-      let foundUser: User | null = null;
-      let authUserUid: string | null = null;
+      if (!cleanId) {
+        return { success: false, message: 'Informe o seu número de telefone ou e-mail.' };
+      }
+      if (!password) {
+        return { success: false, message: 'Informe a sua palavra-passe.' };
+      }
+
+      let authUserEmail = '';
+      let targetUserId: string | null = null;
+      let userData: User | null = null;
 
       if (isEmail) {
-        // Attempt Firebase Auth login first
-        try {
-          const cred = await signInWithEmailAndPassword(auth, cleanId, password);
-          authUserUid = cred.user.uid;
-        } catch (authErr: any) {
-          console.warn('Firebase Auth sign in notice:', authErr?.code || authErr?.message);
-        }
-
-        // Fetch user from Firestore by auth UID if authenticated
-        if (authUserUid) {
-          const userDoc = await getDoc(doc(db, 'users', authUserUid));
-          if (userDoc.exists()) {
-            foundUser = userDoc.data() as User;
-          }
-        }
-
-        // If not found by UID, search by email in Firestore
-        if (!foundUser) {
-          const q = query(collection(db, 'users'), where('email', '==', cleanId));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            foundUser = snap.docs[0].data() as User;
-            // If user exists in Firestore but not in Firebase Auth, sync to Auth
-            if (!authUserUid && password && foundUser.password === password) {
-              try {
-                await createUserWithEmailAndPassword(auth, cleanId, password);
-              } catch {
-                // Ignore if already created
-              }
-            }
-          }
-        }
+        authUserEmail = cleanId.toLowerCase();
       } else {
-        // Phone login: Query Firestore
-        let q = query(collection(db, 'users'), where('phone', '==', cleanPhone));
-        let snap = await getDocs(q);
+        // Find user by phone in Firestore to retrieve associated email
+        let snap = await getDocs(query(collection(db, 'users'), where('phone', '==', cleanPhone)));
         if (snap.empty) {
-          q = query(collection(db, 'users'), where('phone', '==', identifier.trim()));
-          snap = await getDocs(q);
+          snap = await getDocs(query(collection(db, 'users'), where('phone', '==', cleanId)));
         }
-        if (!snap.empty) {
-          foundUser = snap.docs[0].data() as User;
-          // Sync with Firebase Auth using registered email
-          if (foundUser.email && password) {
-            try {
-              await signInWithEmailAndPassword(auth, foundUser.email, password);
-            } catch (authErr: any) {
-              if (authErr?.code === 'auth/user-not-found') {
-                try {
-                  await createUserWithEmailAndPassword(auth, foundUser.email, password);
-                } catch {
-                  // Ignore
-                }
-              }
-            }
-          }
+        if (snap.empty) {
+          return {
+            success: false,
+            message: 'Nenhum operador encontrado com este número de telefone. Verifique o número ou cadastre-se.',
+          };
         }
+        userData = snap.docs[0].data() as User;
+        targetUserId = userData.id;
+        authUserEmail = userData.email || '';
       }
 
-      if (!foundUser) {
+      if (!authUserEmail) {
         return {
           success: false,
-          message: 'Operador não encontrado. Por favor, verifique seu telefone ou e-mail, ou cadastre-se.',
+          message: 'Conta sem e-mail de autenticação vinculado. Entre em contato com o suporte.',
         };
       }
 
-      if (foundUser.password && password && foundUser.password !== password) {
+      // Authenticate with Firebase Authentication
+      let cred;
+      try {
+        cred = await signInWithEmailAndPassword(auth, authUserEmail, password);
+      } catch (authErr: any) {
         return {
           success: false,
-          message: 'Senha incorreta. Verifique suas credenciais de acesso.',
+          message: formatAuthError(authErr),
         };
       }
 
-      localStorage.setItem('catoca_active_user_id', foundUser.id);
-      setUser(foundUser);
+      // Retrieve user document from Firestore using authenticated UID
+      const effectiveUid = cred.user.uid;
+      const userRef = doc(db, 'users', effectiveUid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        userData = userSnap.data() as User;
+      } else if (targetUserId && targetUserId !== effectiveUid) {
+        const fallbackSnap = await getDoc(doc(db, 'users', targetUserId));
+        if (fallbackSnap.exists()) {
+          userData = fallbackSnap.data() as User;
+        }
+      }
+
+      // If document is missing in Firestore, create default document
+      if (!userData) {
+        userData = {
+          id: effectiveUid,
+          name: authUserEmail.split('@')[0],
+          phone: cleanPhone || '900000000',
+          phoneCode: '+244',
+          email: authUserEmail,
+          inviteCode: Math.random().toString(36).substring(2, 10).toLowerCase(),
+          invitedBy: '1fg9kafci6',
+          vipLevel: 0,
+          balance: 650,
+          depositBalance: 650,
+          todayEarnings: 0,
+          yesterdayEarnings: 0,
+          totalEarnings: 650,
+          thisMonthEarnings: 650,
+          tasksCompletedToday: 0,
+          luckyDrawSpins: 3,
+          token: 'jwt_catoca_' + Date.now(),
+          avatar: '/assets/images/catoca_diamond_gem_1792306524777.jpg',
+          createdAt: new Date().toISOString(),
+          payPasswordSet: false,
+          totalCaratsExtracted: 0.20,
+          cycleTargetTime: 0,
+        };
+        await setDoc(doc(db, 'users', effectiveUid), userData);
+      }
+
+      localStorage.setItem('catoca_active_user_id', userData.id);
+      setUser(userData);
       navigateTo('/pages/index/index');
       return { success: true };
     } catch (err: any) {
       console.error('Erro no login:', err);
       return {
         success: false,
-        message: err?.message ? `Erro no banco de dados: ${err.message}` : 'Erro ao autenticar.',
+        message: formatAuthError(err),
       };
     }
   };
@@ -655,10 +748,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!demoSnap.exists()) {
         demoUser = {
           id: demoUid,
+          name: 'Damiao Fernando',
           phone: '923849120',
           phoneCode: '+244',
           email: demoEmail,
-          password: demoPass,
           inviteCode: '1fg9kafci6',
           invitedBy: 'catoca_concessao',
           vipLevel: 2,
@@ -728,6 +821,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) {
       return { success: false, reward: 0, message: 'Usuário não autenticado' };
     }
+    if (isSunday) {
+      return {
+        success: false,
+        reward: 0,
+        message: 'Aos domingos não se realizam tarefas nem extrações na mina de Catoca (manutenção técnica preventiva das usinas). As operações retomam na segunda-feira!',
+      };
+    }
     return {
       success: true,
       reward: 0,
@@ -774,24 +874,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // 7. Withdraw in Firestore (min 1000 Kz)
-  const withdraw = async (amount: number, accountType: string, accountNumber: string, accountName: string) => {
+  const withdraw = async (amount: number, accountType: string, accountNumber: string, accountName: string, pin?: string) => {
     if (!user) return { success: false, message: 'Usuário não autenticado' };
     if (amount < 1000) return { success: false, message: 'O valor mínimo para levantamento é de 1.000 Kz' };
     if (amount > user.balance) return { success: false, message: 'Saldo insuficiente no cofre' };
+
+    // Validate payment password if configured
+    if (user.payPasswordSet && user.paymentPassword) {
+      if (!pin || pin !== user.paymentPassword) {
+        return { success: false, message: 'Senha de pagamento incorreta. Digite a senha definida no seu perfil.' };
+      }
+    }
 
     const netAmount = Math.round(amount * 0.95);
 
     try {
       const userRef = doc(db, 'users', user.id);
+      const updatedAccount = {
+        accountType: 'multicaixa' as const,
+        accountName,
+        accountNumber,
+        bankName: user.bankAccount?.bankName || (accountType === 'multicaixa' ? 'Banco Multicaixa AO' : 'Conta Bancária'),
+      };
+
       await updateDoc(userRef, {
         balance: user.balance - amount,
         depositBalance: Math.max(0, user.depositBalance - amount),
-        bankAccount: {
-          accountType,
-          accountName,
-          accountNumber,
-          bankName: accountType === 'multicaixa' ? 'Banco Multicaixa AO' : 'Conta Externa',
-        },
+        bankAccount: updatedAccount,
       });
 
       const txId = `tx-wd-${Date.now()}`;
@@ -807,12 +916,125 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       await setDoc(doc(db, 'transactions', txId), wdTx);
 
+      setUser((prev) => prev ? {
+        ...prev,
+        balance: prev.balance - amount,
+        bankAccount: updatedAccount,
+      } : null);
+
       return {
         success: true,
         message: `Ordem de saque de ${formatCurrency(amount)} emitida com prioridade!`,
       };
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
+      return { success: false, message: 'Erro ao processar saque.' };
+    }
+  };
+
+  // Bind Bank Account / IBAN
+  const bindBankAccount = async (bankName: string, accountName: string, accountNumber: string) => {
+    if (!user) return { success: false, message: 'Usuário não conectado.' };
+    if (!accountName.trim() || !accountNumber.trim()) {
+      return { success: false, message: 'Preencha o titular e o número do IBAN/Express.' };
+    }
+    try {
+      const userRef = doc(db, 'users', user.id);
+      const newAccount = {
+        accountType: 'multicaixa' as const,
+        accountName: accountName.trim(),
+        accountNumber: accountNumber.trim(),
+        bankName: bankName.trim(),
+      };
+      await updateDoc(userRef, {
+        bankAccount: newAccount,
+      });
+      setUser((prev) => prev ? { ...prev, bankAccount: newAccount } : null);
+      return { success: true, message: 'IBAN de pagamento vinculado com sucesso!' };
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
+      return { success: false, message: 'Erro ao salvar IBAN no banco de dados.' };
+    }
+  };
+
+  // Set / Change Payment Password (4 to 6 digits)
+  const setPaymentPassword = async (password: string) => {
+    if (!user) return { success: false, message: 'Usuário não conectado.' };
+    if (!/^\d{4,6}$/.test(password)) {
+      return { success: false, message: 'A senha de pagamento deve conter de 4 a 6 dígitos numéricos.' };
+    }
+    try {
+      const userRef = doc(db, 'users', user.id);
+      await updateDoc(userRef, {
+        paymentPassword: password,
+        payPasswordSet: true,
+      });
+      setUser((prev) => prev ? { ...prev, paymentPassword: password, payPasswordSet: true } : null);
+      return { success: true, message: 'Senha de pagamento definida com sucesso!' };
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
+      return { success: false, message: 'Erro ao salvar senha de pagamento.' };
+    }
+  };
+
+  // Claim Daily Presence Reward based on VIP Level
+  const claimDailyPresenceReward = async () => {
+    if (!user) return { success: false, amount: 0, message: 'Usuário não conectado.' };
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (user.lastDailyRewardDate === todayStr) {
+      return {
+        success: false,
+        amount: 0,
+        message: 'Presença diária já confirmada hoje! Retorne amanhã para novo bônus.',
+      };
+    }
+
+    const vipLevel = user.vipLevel || 0;
+    const bonusAmount = VIP_DAILY_PRESENCE_BONUS[vipLevel] ?? 2;
+
+    try {
+      const userRef = doc(db, 'users', user.id);
+      const newBalance = (user.balance || 0) + bonusAmount;
+      const newTodayEarnings = (user.todayEarnings || 0) + bonusAmount;
+      const newTotalEarnings = (user.totalEarnings || 0) + bonusAmount;
+
+      await updateDoc(userRef, {
+        balance: newBalance,
+        todayEarnings: newTodayEarnings,
+        totalEarnings: newTotalEarnings,
+        lastDailyRewardDate: todayStr,
+      });
+
+      const txId = `tx-bonus-${Date.now()}`;
+      const bonusTx: Transaction = {
+        id: txId,
+        userId: user.id,
+        type: 'task_reward',
+        amount: bonusAmount,
+        status: 'completed',
+        date: new Date().toLocaleDateString('pt-BR'),
+        timestamp: Date.now(),
+        note: `Bónus de Presença Diária (VIP ${vipLevel}: +${bonusAmount} Kz)`,
+      };
+      await setDoc(doc(db, 'transactions', txId), bonusTx);
+
+      setUser((prev) => prev ? {
+        ...prev,
+        balance: newBalance,
+        todayEarnings: newTodayEarnings,
+        totalEarnings: newTotalEarnings,
+        lastDailyRewardDate: todayStr,
+      } : null);
+
+      return {
+        success: true,
+        amount: bonusAmount,
+        message: `Presença confirmada! Bónus VIP ${vipLevel} de +${formatCurrency(bonusAmount)} creditado no cofre!`,
+      };
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
+      return { success: false, amount: 0, message: 'Erro ao registrar bônus diário.' };
     }
   };
 
@@ -870,6 +1092,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 9. Trigger Simulated 24h Profit in Firestore
   const triggerSimulated24hProfit = async () => {
     if (!user) return { success: false, profit: 0, message: 'Usuário não autenticado' };
+    if (isSunday) {
+      return {
+        success: false,
+        profit: 0,
+        message: 'Aos domingos não se realizam tarefas nem extrações na mina de Catoca. O relógio está pausado e continuará na segunda-feira!',
+      };
+    }
     if (user.vipLevel <= 0) {
       return {
         success: false,
@@ -1055,6 +1284,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     completedTaskIds,
     recharge,
     withdraw,
+    bindBankAccount,
+    setPaymentPassword,
+    claimDailyPresenceReward,
     upgradeVip,
     triggerSimulated24hProfit,
     lastAutoProfit,
@@ -1076,6 +1308,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     countdownSeconds,
     countdownFormatted: formatCountdown(countdownSeconds),
     isClockActive,
+    isSunday,
+    isClockPausedForSunday,
+    simulateSunday,
+    toggleSimulateSunday,
+    managerWhatsAppUrl,
+    whatsappGroupUrl,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { COUNTRY_CODES } from '../data/mockData';
-import { Eye, EyeOff, Globe, Phone, Mail, Lock, Ticket, RefreshCw, AlertCircle, Sparkles, Gem } from 'lucide-react';
+import { Eye, EyeOff, Globe, Phone, Mail, Lock, Ticket, RefreshCw, AlertCircle, Sparkles, Gem, User as UserIcon } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const RegisterPage: React.FC = () => {
   const { register, demoLogin, navigateTo, routeParams, openModal, t } = useApp();
 
+  const [name, setName] = useState('');
   const [phoneCode, setPhoneCode] = useState('+244');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -72,7 +73,7 @@ export const RegisterPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await register(cleanPhone, phoneCode, cleanEmail, password, inviteCode.trim());
+      const res = await register(cleanPhone, phoneCode, cleanEmail, password, inviteCode.trim(), name.trim());
       if (res?.success) {
         confetti({
           particleCount: 120,
@@ -85,7 +86,7 @@ export const RegisterPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Falha ao registrar:', err);
-      setError(err?.message || 'Erro ao conectar ao banco de dados Firestore.');
+      setError(err?.message || 'Erro ao conectar à plataforma.');
     } finally {
       setLoading(false);
     }
@@ -161,6 +162,23 @@ export const RegisterPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleRegister} className="space-y-3.5">
+          {/* Full Name Field */}
+          <div>
+            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+              Nome Completo do Operador
+            </label>
+            <div className="h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center px-3.5 gap-2.5 focus-within:border-sky-500 focus-within:bg-white transition-all shadow-xs">
+              <UserIcon size={16} className="text-sky-600 shrink-0" />
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Ex: Manuel António da Silva"
+                className="flex-1 bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+              />
+            </div>
+          </div>
+
           {/* Phone Field */}
           <div>
             <label className="text-[11px] font-bold text-slate-700 block mb-1">

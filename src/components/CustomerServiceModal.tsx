@@ -10,7 +10,7 @@ interface ChatMessage {
 }
 
 export const CustomerServiceModal: React.FC = () => {
-  const { closeModal } = useApp();
+  const { closeModal, managerWhatsAppUrl, whatsappGroupUrl } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -37,12 +37,14 @@ export const CustomerServiceModal: React.FC = () => {
     setTimeout(() => {
       let reply = 'Recebemos sua mensagem! O suporte técnico aos operadores de Catoca opera 24h por dia para garantir a continuidade da extração mineral.';
       const lower = userMsg.text.toLowerCase();
-      if (lower.includes('saque') || lower.includes('sacar')) {
+      if (lower.includes('domingo') || lower.includes('parado') || lower.includes('segunda')) {
+        reply = 'Aos domingos não se realizam tarefas nem extrações na mina de Catoca devido à manutenção preventiva técnica das usinas. O relógio de 24 horas para de contar e dará sequência na segunda-feira às 00:00!';
+      } else if (lower.includes('saque') || lower.includes('sacar')) {
         reply = 'Os saques de rendimentos de diamantes são liquidados diretamente via rede Multicaixa Express (Angola), BAI e BFA em até 15 minutos úteis.';
       } else if (lower.includes('aloc') || lower.includes('recarga') || lower.includes('depositar')) {
         reply = 'As alocações de capital na mina de Catoca são creditadas instantaneamente mediante validação da referência bancária Multicaixa ou PIX/USDT.';
       } else if (lower.includes('tarefa') || lower.includes('lote') || lower.includes('24h') || lower.includes('relógio') || lower.includes('hora')) {
-        reply = 'O ciclo de extração de diamantes dura 24 horas contínuas! Ao zerar o relógio regressivo, as usinas de tratamento mineral geram novos lotes automaticamente para sua concessão.';
+        reply = 'O ciclo de extração de diamantes dura 24 horas contínuas! Ao zerar o relógio regressivo, as usinas de tratamento mineral geram novos lotes automaticamente para sua concessão. (Lembrando que aos domingos o relógio pausa e retoma na segunda-feira).';
       }
 
       setMessages(prev => [
@@ -76,10 +78,47 @@ export const CustomerServiceModal: React.FC = () => {
           </div>
           <button
             onClick={closeModal}
-            className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900"
+            className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900 cursor-pointer"
           >
             <X size={17} />
           </button>
+        </div>
+
+        {/* WhatsApp Group & Gerente Direct Card */}
+        <div className="p-3 my-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex flex-col gap-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                <MessageCircle size={15} />
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-mono text-emerald-200 block">Comunidade & Gerente</span>
+                <span className="text-xs font-black">Canais Oficiais Catoca</span>
+              </div>
+            </div>
+            <span className="text-[9.5px] bg-white/20 text-emerald-100 px-2 py-0.5 rounded-full font-mono">
+              WhatsApp
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            <a
+              href={whatsappGroupUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 rounded-xl bg-white text-emerald-800 text-[10.5px] font-black shadow-xs hover:bg-emerald-50 active:scale-95 transition-all text-center"
+            >
+              Grupo Discussão
+            </a>
+            <a
+              href={managerWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-950/80 text-white border border-emerald-400/40 text-[10.5px] font-black shadow-xs hover:bg-emerald-900 active:scale-95 transition-all text-center"
+            >
+              Falar c/ Gerente
+            </a>
+          </div>
         </div>
 
         {/* Chat message history */}
@@ -106,6 +145,14 @@ export const CustomerServiceModal: React.FC = () => {
         {/* Quick links & input form */}
         <div className="pt-2 border-t border-slate-100 space-y-2">
           <div className="flex gap-1.5 overflow-x-auto pb-1 text-[10px]">
+            <button
+              onClick={() => {
+                setInputText('Por que o relógio para no domingo e não tem tarefas?');
+              }}
+              className="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap font-medium"
+            >
+              Domingos na Mina
+            </button>
             <button
               onClick={() => {
                 setInputText('Como funciona o ciclo automático de 24 horas?');

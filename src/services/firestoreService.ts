@@ -45,9 +45,8 @@ export const subscribeToUser = (
       }
     },
     (err) => {
-      console.error(`[FirestoreService] Erro ao observar usuário ${userId}:`, err);
+      console.warn(`[FirestoreService] Erro ao observar usuário ${userId}:`, err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.GET, `users/${userId}`);
     }
   );
 };
@@ -106,9 +105,8 @@ export const subscribeToUserTransactions = (
       onUpdate(list);
     },
     (err) => {
-      console.error(`[FirestoreService] Erro ao listar transações de ${userId}:`, err);
+      console.warn(`[FirestoreService] Erro ao listar transações de ${userId}:`, err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, 'transactions');
     }
   );
 };
@@ -147,9 +145,16 @@ export const subscribeToAnnouncements = (
       onUpdate(list);
     },
     (err) => {
-      console.warn('[FirestoreService] Falha ao carregar letreiro:', err);
+      console.warn('[FirestoreService] Falha ao carregar letreiro de avisos. Usando dados locais:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, 'announcements');
+      const fallbackList: Announcement[] = MOCK_TICKERS.map((text, i) => ({
+        id: `ann-local-${i + 1}`,
+        text,
+        type: i % 2 === 0 ? 'extraction' : 'withdrawal',
+        timestamp: Date.now() - i * 60000,
+        active: true,
+      }));
+      onUpdate(fallbackList);
     }
   );
 };
@@ -199,9 +204,9 @@ export const subscribeToMiningTasks = (
       onUpdate(list);
     },
     (err) => {
-      console.warn('[FirestoreService] Falha ao carregar tarefas minerais:', err);
+      console.warn('[FirestoreService] Falha ao carregar tarefas minerais. Usando tarefas padrão:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, 'miningTasks');
+      onUpdate(INITIAL_DIAMOND_TASKS);
     }
   );
 };
@@ -240,9 +245,16 @@ export const subscribeToConcessionStats = (
       }
     },
     (err) => {
-      console.warn('[FirestoreService] Erro ao monitorar métricas da concessão:', err);
+      console.warn('[FirestoreService] Erro ao monitorar métricas da concessão. Usando métricas padrão:', err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.GET, 'concession_stats/global');
+      onUpdate({
+        id: 'global',
+        totalCaratsMined: 148290.45,
+        activeOperatorsCount: 8412,
+        totalDistributedKz: 948200000,
+        concessionStatus: 'Operação Ativa 24h · UTM-1 e UTM-2',
+        updatedAt: new Date().toISOString(),
+      });
     }
   );
 };
@@ -296,9 +308,8 @@ export const subscribeToInvestments = (
       onUpdate(list);
     },
     (err) => {
-      console.error(`[FirestoreService] Erro ao listar investimentos de ${userId}:`, err);
+      console.warn(`[FirestoreService] Erro ao listar investimentos de ${userId}:`, err);
       if (onError) onError(err);
-      handleFirestoreError(err, OperationType.LIST, 'investments');
     }
   );
 };

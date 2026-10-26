@@ -16,10 +16,10 @@ export interface DiamondTask {
 
 export interface User {
   id: string;
+  name?: string;
   phone: string;
   phoneCode: string;
   email?: string;
-  password?: string;
   inviteCode: string;
   invitedBy?: string;
   vipLevel: number;
@@ -35,8 +35,12 @@ export interface User {
   avatar: string;
   createdAt: string;
   payPasswordSet: boolean;
+  paymentPassword?: string;
+  lastDailyRewardDate?: string;
   totalCaratsExtracted: number;
   cycleTargetTime?: number;
+  isAdmin?: boolean;
+  role?: 'admin' | 'operator';
   bankAccount?: {
     accountType: 'multicaixa' | 'pix' | 'usdt';
     accountName: string;
@@ -68,6 +72,9 @@ export interface VIPTier {
 export interface Transaction {
   id: string;
   userId?: string;
+  userName?: string;
+  userPhone?: string;
+  userEmail?: string;
   type: 'recharge' | 'withdraw' | 'task_reward' | 'vip_upgrade' | 'referral_bonus' | 'lucky_draw' | 'fund_interest';
   amount: number;
   status: 'completed' | 'pending' | 'failed';
@@ -78,6 +85,12 @@ export interface Transaction {
   proofUrl?: string;
   senderName?: string;
   paymentMethod?: string;
+  accountType?: string;
+  accountName?: string;
+  accountNumber?: string;
+  adminNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
 }
 
 export interface FundPlan {

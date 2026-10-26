@@ -25,9 +25,9 @@
           "description": "E-mail cadastrado do operador",
           "maxLength": 128
         },
-        "password": {
+        "name": {
           "type": "string",
-          "description": "Hash ou senha de acesso do operador",
+          "description": "Nome completo do operador Catoca",
           "maxLength": 128
         },
         "inviteCode": {
@@ -96,6 +96,15 @@
         "cycleTargetTime": {
           "type": "number",
           "description": "Timestamp em ms para expiração do ciclo de 24h"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Indica privilégios de administrador da plataforma"
+        },
+        "paymentPassword": {
+          "type": "string",
+          "description": "PIN de segurança para autorização de saques",
+          "maxLength": 32
         }
       },
       "required": ["id", "phone", "email", "vipLevel", "balance", "totalEarnings"]
@@ -114,6 +123,16 @@
           "type": "string",
           "description": "ID do operador proprietário da transação",
           "maxLength": 64
+        },
+        "userName": {
+          "type": "string",
+          "description": "Nome do operador da transação",
+          "maxLength": 128
+        },
+        "userPhone": {
+          "type": "string",
+          "description": "Telefone do operador da transação",
+          "maxLength": 32
         },
         "type": {
           "type": "string",
@@ -140,7 +159,27 @@
         "note": {
           "type": "string",
           "description": "Descrição detalhada do lote ou transação",
-          "maxLength": 256
+          "maxLength": 512
+        },
+        "proofUrl": {
+          "type": "string",
+          "description": "URL ou base64 do comprovativo anexado",
+          "maxLength": 500000
+        },
+        "accountType": {
+          "type": "string",
+          "description": "Tipo de conta ou canal bancário",
+          "maxLength": 32
+        },
+        "accountNumber": {
+          "type": "string",
+          "description": "IBAN, número Express ou chave de destino",
+          "maxLength": 128
+        },
+        "accountName": {
+          "type": "string",
+          "description": "Titular da conta bancária de destino",
+          "maxLength": 128
         }
       },
       "required": ["id", "userId", "type", "amount", "status"]

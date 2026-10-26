@@ -3,10 +3,10 @@ import { useApp } from '../context/AppContext';
 import { X, ArrowDownCircle, CheckCircle, AlertCircle, Gem } from 'lucide-react';
 
 export const WithdrawModal: React.FC = () => {
-  const { closeModal, withdraw, user, formatCurrency } = useApp();
+  const { closeModal, openModal, withdraw, user, formatCurrency } = useApp();
   const [accountType, setAccountType] = useState<'multicaixa' | 'pix' | 'usdt'>('multicaixa');
-  const [accountName, setAccountName] = useState<string>(user?.bankAccount?.accountName || 'Damiao Fernando');
-  const [accountNumber, setAccountNumber] = useState<string>(user?.bankAccount?.accountNumber || 'AO06.0040.0000.8923.4112.1018.9');
+  const [accountName, setAccountName] = useState<string>(user?.bankAccount?.accountName || '');
+  const [accountNumber, setAccountNumber] = useState<string>(user?.bankAccount?.accountNumber || '');
   const [amountStr, setAmountStr] = useState<string>('');
   const [pin, setPin] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -32,25 +32,25 @@ export const WithdrawModal: React.FC = () => {
     }
 
     if (!accountName.trim() || !accountNumber.trim()) {
-      setError('Preencha os dados da conta bancária de destino.');
+      setError('Preencha ou vincule os dados da conta bancária de destino.');
       return;
     }
 
     if (pin.length < 4) {
-      setError('Digite seu PIN de segurança de 4 a 6 dígitos.');
+      setError('Digite sua senha de pagamento de 4 a 6 dígitos.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await withdraw(amount, accountType, accountNumber, accountName);
-      if (res.success) {
+      const res = await withdraw(amount, accountType, accountNumber, accountName, pin);
+      if (res?.success) {
         setSuccess(true);
         setTimeout(() => {
           closeModal();
         }, 1800);
       } else {
-        setError(res.message);
+        setError(res?.message || 'Erro ao processar saque.');
       }
     } finally {
       setIsSubmitting(false);
@@ -151,16 +151,25 @@ export const WithdrawModal: React.FC = () => {
 
             {/* Account details */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">
-                Titular da Conta Bancária
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-slate-700">
+                  Titular da Conta Bancária
+                </label>
+                <button
+                  type="button"
+                  onClick={() => openModal('bind_iban')}
+                  className="text-[11px] font-bold text-sky-600 hover:underline cursor-pointer"
+                >
+                  {user?.bankAccount ? 'Alterar IBAN' : '+ Vincular IBAN'}
+                </button>
+              </div>
               <input
                 type="text"
                 required
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="Nome completo do titular"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-hidden focus:border-sky-500 font-medium"
               />
             </div>
 
@@ -173,8 +182,8 @@ export const WithdrawModal: React.FC = () => {
                 required
                 value={accountNumber}
                 onChange={e => setAccountNumber(e.target.value)}
-                placeholder={accountType === 'multicaixa' ? 'AO06.0040.0000...' : 'Chave de destino'}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500"
+                placeholder={accountType === 'multicaixa' ? '000600005833872230121 ou 933191188' : 'Chave de destino'}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:outline-hidden focus:border-sky-500 font-bold"
               />
             </div>
 
@@ -189,7 +198,7 @@ export const WithdrawModal: React.FC = () => {
                 value={amountStr}
                 onChange={e => setAmountStr(e.target.value)}
                 placeholder="Digite o valor..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:outline-hidden focus:border-sky-500 font-bold"
               />
 
               {amount > 0 && (
@@ -206,19 +215,28 @@ export const WithdrawModal: React.FC = () => {
               )}
             </div>
 
-            {/* PIN */}
+            {/* PIN / Senha de Pagamento */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 block">
-                PIN de Segurança Financeira (4 a 6 dígitos)
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-slate-700">
+                  Senha de Pagamento / PIN de Segurança
+                </label>
+                <button
+                  type="button"
+                  onClick={() => openModal('payment_password')}
+                  className="text-[11px] font-bold text-sky-600 hover:underline cursor-pointer"
+                >
+                  {user?.payPasswordSet ? 'Alterar Senha' : 'Definir Senha'}
+                </button>
+              </div>
               <input
                 type="password"
                 maxLength={6}
                 required
                 value={pin}
                 onChange={e => setPin(e.target.value)}
-                placeholder="••••"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono tracking-widest focus:outline-none focus:border-sky-500"
+                placeholder="Digite sua senha de pagamento (4 a 6 dígitos)"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono tracking-widest focus:outline-hidden focus:border-sky-500 font-bold"
               />
             </div>
 

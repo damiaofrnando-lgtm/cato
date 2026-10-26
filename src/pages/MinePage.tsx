@@ -22,7 +22,12 @@ import {
   CheckCircle2,
   Building2,
   Users,
-  Gift
+  Gift,
+  KeyRound,
+  MessageCircle,
+  UserCheck,
+  ExternalLink,
+  Lock
 } from 'lucide-react';
 
 export const MinePage: React.FC = () => {
@@ -36,7 +41,9 @@ export const MinePage: React.FC = () => {
     t, 
     hideBalance, 
     toggleHideBalance,
-    transactions 
+    transactions,
+    managerWhatsAppUrl,
+    whatsappGroupUrl
   } = useApp();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [teamCount, setTeamCount] = useState<number>(0);
@@ -58,7 +65,36 @@ export const MinePage: React.FC = () => {
     logout();
   };
 
+
   const menuItems = [
+    {
+      id: 'bind_iban',
+      label: 'Vincular IBAN de Pagamento',
+      icon: CreditCard,
+      color: 'text-blue-600',
+      action: () => openModal('bind_iban'),
+    },
+    {
+      id: 'pay_password',
+      label: 'Definir Senha de Pagamento',
+      icon: KeyRound,
+      color: 'text-amber-600',
+      action: () => openModal('payment_password'),
+    },
+    {
+      id: 'whatsapp_group',
+      label: 'Grupo de Discussão Catoca',
+      icon: MessageCircle,
+      color: 'text-emerald-600',
+      action: () => window.open(whatsappGroupUrl, '_blank'),
+    },
+    {
+      id: 'manager',
+      label: 'Gerente de Atendimento (WhatsApp)',
+      icon: UserCheck,
+      color: 'text-indigo-600',
+      action: () => window.open(managerWhatsAppUrl, '_blank'),
+    },
     {
       id: 'records',
       label: t.mine.menu.transactionRecords,
@@ -67,11 +103,11 @@ export const MinePage: React.FC = () => {
       action: () => navigateTo('/pages/records/index'),
     },
     {
-      id: 'receiving',
-      label: 'Conta Multicaixa / Bancária',
-      icon: CreditCard,
-      color: 'text-blue-600',
-      action: () => openModal('withdraw'),
+      id: 'daily_reward',
+      label: 'Bónus de Presença Diária & Missões',
+      icon: Gift,
+      color: 'text-amber-500',
+      action: () => openModal('daily_reward'),
     },
     {
       id: 'fund',
@@ -79,13 +115,6 @@ export const MinePage: React.FC = () => {
       icon: TrendingUp,
       color: 'text-cyan-600',
       action: () => openModal('wealth_fund'),
-    },
-    {
-      id: 'daily_reward',
-      label: 'Bónus de Presença Diária & Missões',
-      icon: Gift,
-      color: 'text-amber-500',
-      action: () => openModal('daily_reward'),
     },
     {
       id: 'service',
@@ -254,15 +283,16 @@ export const MinePage: React.FC = () => {
               <CreditCard size={16} />
             </div>
             <div>
-              <h4 className="text-xs font-black text-slate-900">Conta de Saque Cadastrada</h4>
+              <h4 className="text-xs font-black text-slate-900">IBAN de Pagamento Vinculado</h4>
               <p className="text-[10px] text-slate-500">Documento em tempo real no Firestore</p>
             </div>
           </div>
           <button
-            onClick={() => openModal('withdraw')}
+            type="button"
+            onClick={() => openModal('bind_iban')}
             className="text-[11px] font-bold text-sky-600 hover:underline cursor-pointer"
           >
-            {user?.bankAccount ? 'Alterar' : '+ Cadastrar'}
+            {user?.bankAccount ? 'Alterar IBAN' : '+ Vincular IBAN'}
           </button>
         </div>
 
@@ -285,16 +315,101 @@ export const MinePage: React.FC = () => {
           </div>
         ) : (
           <div 
-            onClick={() => openModal('withdraw')}
+            onClick={() => openModal('bind_iban')}
             className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs flex items-center justify-between cursor-pointer hover:bg-amber-100/60 transition-colors"
           >
             <div className="flex items-center gap-2 text-amber-800">
               <AlertTriangle size={15} className="shrink-0 text-amber-600" />
-              <span className="text-[11px] font-medium">Nenhuma conta vinculada para recebimento de saques</span>
+              <span className="text-[11px] font-medium">Nenhum IBAN vinculado para recebimento de saques</span>
             </div>
-            <span className="text-[10px] font-bold text-sky-600 underline shrink-0">Configurar</span>
+            <span className="text-[10px] font-bold text-sky-600 underline shrink-0">Vincular</span>
           </div>
         )}
+      </div>
+
+      {/* Payment Password Status Card */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+              <KeyRound size={16} />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-slate-900">Senha de Pagamento / Saques</h4>
+              <p className="text-[10px] text-slate-500">Proteção de resgate de rendimentos</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => openModal('payment_password')}
+            className="text-[11px] font-bold text-sky-600 hover:underline cursor-pointer"
+          >
+            {user?.payPasswordSet ? 'Alterar Senha' : 'Definir Agora'}
+          </button>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${user?.payPasswordSet ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            <span className="text-slate-700 font-medium">
+              {user?.payPasswordSet
+                ? 'Senha de pagamento configurada e ativa'
+                : 'Senha não configurada (defina para proteger saques)'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => openModal('payment_password')}
+            className="text-[10.5px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-lg border border-sky-200"
+          >
+            {user?.payPasswordSet ? 'Modificar' : 'Configurar'}
+          </button>
+        </div>
+      </div>
+
+      {/* Official WhatsApp Discussion Group & Manager Banner */}
+      <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-700 to-emerald-800 text-white relative overflow-hidden shadow-md space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-2xl bg-white/10 backdrop-blur-xs flex items-center justify-center text-white border border-white/20">
+              <MessageCircle size={20} />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold uppercase text-emerald-200 tracking-wider block font-mono">
+                Comunidade Oficial
+              </span>
+              <h4 className="text-sm font-black text-white">Grupo de Discussão Catoca</h4>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold bg-white/20 text-emerald-100 px-2 py-0.5 rounded-full border border-white/30">
+            WhatsApp
+          </span>
+        </div>
+
+        <p className="text-xs text-emerald-100/90 leading-relaxed">
+          Tire dúvidas em tempo real com outros operadores, receba relatórios diários de lavra e suporte direto com o Gerente de Atendimento.
+        </p>
+
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <a
+            href={whatsappGroupUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2.5 px-3 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all text-center"
+          >
+            <MessageCircle size={15} />
+            <span>Entrar no Grupo</span>
+          </a>
+          <a
+            href={managerWhatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2.5 px-3 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400/40 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all text-center"
+          >
+            <UserCheck size={15} />
+            <span>Falar c/ Gerente</span>
+          </a>
+        </div>
       </div>
 
       {/* Menu List - White Diamond */}
