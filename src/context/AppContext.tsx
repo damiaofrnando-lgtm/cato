@@ -29,9 +29,13 @@ import {
   seedDefaultConcessionStats,
 } from '../services/firestoreService';
 
+export const ADMIN_UID = '0j4XJDI6iXgXpODNoMZHs7daRnR2';
+export const ADMIN_EMAILS = ['damiaofrnando@gmail.com', 'enzzon25@gmail.com'];
+
 interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   language: Language;
   setLanguage: (lang: Language) => void;
   t: typeof translations['pt'];
@@ -40,6 +44,7 @@ interface AppContextType {
   routeParams: Record<string, string>;
   register: (phone: string, phoneCode: string, email: string, password: string, inviteCode: string, name?: string) => Promise<{ success: boolean; message?: string }>;
   login: (identifier: string, phoneCode: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  adminLoginShortcut: () => Promise<void>;
   demoLogin: () => Promise<void> | void;
   logout: () => void;
   claimDiamondLot: (taskId: string) => { success: boolean; reward: number; message: string };
@@ -56,6 +61,16 @@ interface AppContextType {
   investInFund: (planId: string, amount: number) => Promise<{ success: boolean; message: string }>;
   investments: UserInvestment[];
   transactions: Transaction[];
+  allTransactions: Transaction[];
+  allUsers: User[];
+  pendingDepositsCount: number;
+  pendingWithdrawalsCount: number;
+  totalPendingCount: number;
+  approveDeposit: (txId: string) => Promise<{ success: boolean; message: string }>;
+  rejectDeposit: (txId: string, reason: string) => Promise<{ success: boolean; message: string }>;
+  approveWithdraw: (txId: string) => Promise<{ success: boolean; message: string }>;
+  rejectWithdraw: (txId: string, reason: string) => Promise<{ success: boolean; message: string }>;
+  adjustUserBalance: (userId: string, deltaAmount: number, reason: string) => Promise<{ success: boolean; message: string }>;
   announcements: Announcement[];
   miningTasks: DiamondTask[];
   concessionStats: ConcessionStats | null;
@@ -101,6 +116,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [miningTasks, setMiningTasks] = useState<DiamondTask[]>([]);
   const [concessionStats, setConcessionStats] = useState<ConcessionStats | null>(null);
 
+  // Global collections for Admin Management & Real-time Auditing
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+
   // Real-time listeners for global Concession Collections
   useEffect(() => {
     const unsubAnn = subscribeToAnnouncements((data) => {
@@ -113,12 +132,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setConcessionStats(data);
     });
 
+    // Real-time listener for all users
+    const unsubUsers = onSnapshot(
+      collection(db, 'users'),
+      (snap) => {
+        const list: User[] = [];
+        snap.forEach((d) => {
+          list.push(d.data() as User);
+        });
+        setAllUsers(list);
+      },
+      (err) => {
+        console.warn('Sync all users:', err);
+      }
+    );
+
+    // Real-time listener for all transactions
+    const unsubTx = onSnapshot(
+      collection(db, 'transactions'),
+      (snap) => {
+        const list: Transaction[] = [];
+        snap.forEach((d) => {
+          list.push(d.data() as Transaction);
+        });
+        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setAllTransactions(list);
+      },
+      (err) => {
+        console.warn('Sync all transactions:', err);
+      }
+    );
+
     return () => {
       unsubAnn();
       unsubTasks();
       unsubStats();
+      unsubUsers();
+      unsubTx();
     };
   }, []);
+
+  const isAdmin = !!(
+    user &&
+    (user.id === ADMIN_UID ||
+      user.isAdmin === true ||
+      user.role === 'admin' ||
+      ADMIN_EMAILS.includes((user.email || '').toLowerCase()))
+  );
+
+  const pendingDepositsCount = allTransactions.filter(
+    (t) => t.type === 'recharge' && t.status === 'pending'
+  ).length;
+
+  const pendingWithdrawalsCount = allTransactions.filter(
+    (t) => t.type === 'withdraw' && t.status === 'pending'
+  ).length;
+
+  const totalPendingCount = pendingDepositsCount + pendingWithdrawalsCount;
 
   // Official WhatsApp Links
   const managerWhatsAppUrl = 'https://wa.me/message/RYWEG4XDAU64P1';
@@ -707,6 +777,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await setDoc(doc(db, 'users', effectiveUid), userData);
       }
 
+      // Check if user is an Administrator (by UID, designated email, or database flag)
+      const isAdminUser =
+        effectiveUid === ADMIN_UID ||
+        ADMIN_EMAILS.includes(authUserEmail.toLowerCase()) ||
+        userData?.isAdmin === true ||
+        userData?.role === 'admin' ||
+        cleanId === ADMIN_UID;
+
+      if (isAdminUser) {
+        userData.isAdmin = true;
+        userData.role = 'admin';
+        try {
+          await updateDoc(doc(db, 'users', userData.id), { isAdmin: true, role: 'admin' });
+        } catch {
+          // ignore
+        }
+        localStorage.setItem('catoca_active_user_id', userData.id);
+        setUser(userData);
+        navigateTo('/pages/admin/index');
+        return { success: true };
+      }
+
       localStorage.setItem('catoca_active_user_id', userData.id);
       setUser(userData);
       navigateTo('/pages/index/index');
@@ -717,6 +809,73 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         success: false,
         message: formatAuthError(err),
       };
+    }
+  };
+
+  // Direct Administrator Quick-Access for UID 0j4XJDI6iXgXpODNoMZHs7daRnR2
+  const adminLoginShortcut = async () => {
+    try {
+      const adminEmail = 'damiaofrnando@gmail.com';
+      let adminUser: User | null = null;
+
+      // Try reading existing admin document
+      const docSnap = await getDoc(doc(db, 'users', ADMIN_UID));
+      if (docSnap.exists()) {
+        adminUser = docSnap.data() as User;
+      } else {
+        const q = query(collection(db, 'users'), where('email', '==', adminEmail.toLowerCase()));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) {
+          adminUser = qSnap.docs[0].data() as User;
+        }
+      }
+
+      if (!adminUser) {
+        adminUser = {
+          id: ADMIN_UID,
+          name: 'Damiao Fernando (Administrador Catoca)',
+          phone: '923849120',
+          phoneCode: '+244',
+          email: adminEmail,
+          inviteCode: 'catoca_adm',
+          vipLevel: 15,
+          balance: 25000000,
+          depositBalance: 25000000,
+          todayEarnings: 800000,
+          yesterdayEarnings: 1500000,
+          totalEarnings: 35000000,
+          thisMonthEarnings: 35000000,
+          tasksCompletedToday: 0,
+          luckyDrawSpins: 99,
+          token: 'jwt_admin_catoca',
+          avatar: '/assets/aistudio/IMG_1487_83d7197c.jpeg',
+          createdAt: new Date().toISOString(),
+          payPasswordSet: true,
+          paymentPassword: '2026',
+          totalCaratsExtracted: 5000,
+          cycleTargetTime: 0,
+          isAdmin: true,
+          role: 'admin',
+          bankAccount: {
+            accountType: 'multicaixa',
+            accountName: 'Damiao Fernando Administrador',
+            accountNumber: 'AO06.0040.0000.8923.4112.1018.9',
+            bankName: 'Banco BFA Multicaixa',
+          },
+        };
+        await setDoc(doc(db, 'users', ADMIN_UID), adminUser);
+      } else {
+        adminUser.isAdmin = true;
+        adminUser.role = 'admin';
+        await updateDoc(doc(db, 'users', adminUser.id), { isAdmin: true, role: 'admin' });
+      }
+
+      localStorage.setItem('catoca_active_user_id', adminUser.id);
+      setUser(adminUser);
+      navigateTo('/pages/admin/index');
+    } catch (e) {
+      console.error('Falha no adminLoginShortcut:', e);
+      navigateTo('/pages/admin/index');
     }
   };
 
@@ -835,25 +994,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  // 6. Recharge in Firestore with receipt proof
+  // 6. Recharge in Firestore with receipt proof and Pending status for Admin review
   const recharge = async (amount: number, method: string, proofUrl?: string, senderInfo?: string) => {
     if (!user) return { success: false, message: 'Usuário não autenticado' };
 
     try {
-      const userRef = doc(db, 'users', user.id);
-      await updateDoc(userRef, {
-        balance: user.balance + amount,
-        depositBalance: user.depositBalance + amount,
-        luckyDrawSpins: (user.luckyDrawSpins || 0) + 2,
-      });
-
       const txId = `tx-rech-${Date.now()}`;
       const rechTx: Transaction = {
         id: txId,
         userId: user.id,
+        userName: user.name || 'Operador Catoca',
+        userPhone: user.phone,
+        userEmail: user.email,
         type: 'recharge',
         amount,
-        status: 'completed',
+        status: 'pending', // Pending approval by Admin
         date: new Date().toLocaleDateString('pt-BR'),
         timestamp: Date.now(),
         note: `Depósito via ${method.toUpperCase()}${senderInfo ? ` (${senderInfo})` : ''}`,
@@ -865,25 +1020,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return {
         success: true,
-        message: `Depósito de ${formatCurrency(amount)} confirmado com comprovativo no cofre!`,
+        message: `Comprovativo de depósito de ${formatCurrency(amount)} enviado para análise da administração Catoca! O saldo será liberado após a validação.`,
       };
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
-      return { success: false, message: 'Erro ao processar alocação' };
+      handleFirestoreError(err, OperationType.WRITE, `transactions/${user.id}`);
+      return { success: false, message: 'Erro ao enviar comprovativo de depósito.' };
     }
   };
 
-  // 7. Withdraw in Firestore (min 1000 Kz)
+  // 7. Withdraw in Firestore with strict TRUE payment password verification
   const withdraw = async (amount: number, accountType: string, accountNumber: string, accountName: string, pin?: string) => {
     if (!user) return { success: false, message: 'Usuário não autenticado' };
     if (amount < 1000) return { success: false, message: 'O valor mínimo para levantamento é de 1.000 Kz' };
     if (amount > user.balance) return { success: false, message: 'Saldo insuficiente no cofre' };
 
-    // Validate payment password if configured
-    if (user.payPasswordSet && user.paymentPassword) {
-      if (!pin || pin !== user.paymentPassword) {
-        return { success: false, message: 'Senha de pagamento incorreta. Digite a senha definida no seu perfil.' };
-      }
+    // STRICT VALIDATION: If payment password is not set, or PIN doesn't match the true payment password
+    if (!user.payPasswordSet || !user.paymentPassword) {
+      return {
+        success: false,
+        message: 'Para efetuar saques, você precisa primeiro definir a sua Senha de Pagamento no seu Perfil / Cofre.',
+      };
+    }
+
+    if (!pin || pin.trim() !== user.paymentPassword.trim()) {
+      return {
+        success: false,
+        message: 'Senha de pagamento incorreta! Digite a senha verdadeira de segurança cadastrada na sua conta.',
+      };
     }
 
     const netAmount = Math.round(amount * 0.95);
@@ -897,9 +1060,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bankName: user.bankAccount?.bankName || (accountType === 'multicaixa' ? 'Banco Multicaixa AO' : 'Conta Bancária'),
       };
 
+      // Deduct balance to hold funds during withdrawal review
       await updateDoc(userRef, {
         balance: user.balance - amount,
-        depositBalance: Math.max(0, user.depositBalance - amount),
         bankAccount: updatedAccount,
       });
 
@@ -907,12 +1070,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const wdTx: Transaction = {
         id: txId,
         userId: user.id,
+        userName: user.name || 'Operador Catoca',
+        userPhone: user.phone,
+        userEmail: user.email,
         type: 'withdraw',
         amount: -amount,
-        status: 'completed',
+        status: 'pending', // PENDING for Admin review and approval!
         date: new Date().toLocaleDateString('pt-BR'),
         timestamp: Date.now(),
-        note: `Resgate de Rendimentos Catoca (${accountName} - ${accountNumber.slice(-4)}). Líquido: ${formatCurrency(netAmount)}`,
+        note: `Ordem de Saque (${accountName} - ${accountNumber.slice(-4)}). Líquido: ${formatCurrency(netAmount)}`,
+        accountType,
+        accountName,
+        accountNumber,
       };
       await setDoc(doc(db, 'transactions', txId), wdTx);
 
@@ -924,11 +1093,204 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return {
         success: true,
-        message: `Ordem de saque de ${formatCurrency(amount)} emitida com prioridade!`,
+        message: `Solicitação de saque de ${formatCurrency(amount)} enviada para aprovação do Administrador Catoca!`,
       };
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
-      return { success: false, message: 'Erro ao processar saque.' };
+      return { success: false, message: 'Erro ao processar ordem de saque.' };
+    }
+  };
+
+  // ADMIN ACTION: Approve Deposit
+  const approveDeposit = async (txId: string) => {
+    try {
+      const txRef = doc(db, 'transactions', txId);
+      const txSnap = await getDoc(txRef);
+      if (!txSnap.exists()) return { success: false, message: 'Transação não encontrada.' };
+      const txData = txSnap.data() as Transaction;
+      if (txData.status !== 'pending') return { success: false, message: 'Esta transação já foi processada anteriormente.' };
+
+      const targetUserId = txData.userId;
+      if (!targetUserId) return { success: false, message: 'Operador não associado a esta transação.' };
+
+      const userRef = doc(db, 'users', targetUserId);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return { success: false, message: 'Operador não encontrado na base de dados.' };
+      const targetUser = userSnap.data() as User;
+
+      const newBalance = (targetUser.balance || 0) + txData.amount;
+      const newDepositBalance = (targetUser.depositBalance || 0) + txData.amount;
+      const newSpins = (targetUser.luckyDrawSpins || 0) + 2;
+
+      await updateDoc(userRef, {
+        balance: newBalance,
+        depositBalance: newDepositBalance,
+        luckyDrawSpins: newSpins,
+      });
+
+      await updateDoc(txRef, {
+        status: 'completed',
+        reviewedBy: user?.name || 'Administrador Central',
+        reviewedAt: new Date().toISOString(),
+      });
+
+      if (user && user.id === targetUserId) {
+        setUser((prev) => prev ? {
+          ...prev,
+          balance: newBalance,
+          depositBalance: newDepositBalance,
+          luckyDrawSpins: newSpins,
+        } : null);
+      }
+
+      return {
+        success: true,
+        message: `Depósito de ${formatCurrency(txData.amount)} aprovado com sucesso! Saldo creditado na conta de ${targetUser.name || 'Operador'}.`,
+      };
+    } catch (err: any) {
+      console.error('Erro ao aprovar depósito:', err);
+      return { success: false, message: err?.message || 'Falha ao aprovar depósito.' };
+    }
+  };
+
+  // ADMIN ACTION: Reject Deposit
+  const rejectDeposit = async (txId: string, reason: string) => {
+    try {
+      const txRef = doc(db, 'transactions', txId);
+      const txSnap = await getDoc(txRef);
+      if (!txSnap.exists()) return { success: false, message: 'Transação não encontrada.' };
+      const txData = txSnap.data() as Transaction;
+      if (txData.status !== 'pending') return { success: false, message: 'Esta transação já foi processada anteriormente.' };
+
+      await updateDoc(txRef, {
+        status: 'failed',
+        adminNote: reason,
+        reviewedBy: user?.name || 'Administrador Central',
+        reviewedAt: new Date().toISOString(),
+      });
+
+      return { success: true, message: 'Depósito recusado e registrado no histórico de auditoria.' };
+    } catch (err: any) {
+      console.error('Erro ao recusar depósito:', err);
+      return { success: false, message: err?.message || 'Falha ao recusar depósito.' };
+    }
+  };
+
+  // ADMIN ACTION: Approve Withdrawal
+  const approveWithdraw = async (txId: string) => {
+    try {
+      const txRef = doc(db, 'transactions', txId);
+      const txSnap = await getDoc(txRef);
+      if (!txSnap.exists()) return { success: false, message: 'Transação não encontrada.' };
+      const txData = txSnap.data() as Transaction;
+      if (txData.status !== 'pending') return { success: false, message: 'Esta transação já foi processada anteriormente.' };
+
+      await updateDoc(txRef, {
+        status: 'completed',
+        reviewedBy: user?.name || 'Administrador Central',
+        reviewedAt: new Date().toISOString(),
+      });
+
+      return {
+        success: true,
+        message: `Saque de ${formatCurrency(Math.abs(txData.amount))} aprovado com sucesso! Pagamento liberado ao operador.`,
+      };
+    } catch (err: any) {
+      console.error('Erro ao aprovar saque:', err);
+      return { success: false, message: err?.message || 'Falha ao aprovar saque.' };
+    }
+  };
+
+  // ADMIN ACTION: Reject Withdrawal (with refund of held balance)
+  const rejectWithdraw = async (txId: string, reason: string) => {
+    try {
+      const txRef = doc(db, 'transactions', txId);
+      const txSnap = await getDoc(txRef);
+      if (!txSnap.exists()) return { success: false, message: 'Transação não encontrada.' };
+      const txData = txSnap.data() as Transaction;
+      if (txData.status !== 'pending') return { success: false, message: 'Esta transação já foi processada anteriormente.' };
+
+      const targetUserId = txData.userId;
+      if (targetUserId) {
+        const userRef = doc(db, 'users', targetUserId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const targetUser = userSnap.data() as User;
+          const refundAmount = Math.abs(txData.amount);
+          const newBalance = (targetUser.balance || 0) + refundAmount;
+
+          await updateDoc(userRef, {
+            balance: newBalance,
+          });
+
+          if (user && user.id === targetUserId) {
+            setUser((prev) => prev ? { ...prev, balance: newBalance } : null);
+          }
+        }
+      }
+
+      await updateDoc(txRef, {
+        status: 'failed',
+        adminNote: reason,
+        reviewedBy: user?.name || 'Administrador Central',
+        reviewedAt: new Date().toISOString(),
+      });
+
+      return {
+        success: true,
+        message: 'Saque recusado com sucesso. O valor foi estornado integralmente ao saldo do operador.',
+      };
+    } catch (err: any) {
+      console.error('Erro ao recusar saque:', err);
+      return { success: false, message: err?.message || 'Falha ao recusar saque.' };
+    }
+  };
+
+  // ADMIN ACTION: Adjust User Balance (Credit/Debit with mandatory audit reasons)
+  const adjustUserBalance = async (targetUserId: string, deltaAmount: number, reason: string) => {
+    try {
+      const userRef = doc(db, 'users', targetUserId);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        return { success: false, message: 'Operador não encontrado na base de dados.' };
+      }
+      const targetUser = userSnap.data() as User;
+      const newBalance = Math.max(0, (targetUser.balance || 0) + deltaAmount);
+
+      await updateDoc(userRef, {
+        balance: newBalance,
+      });
+
+      const txId = `tx-adm-${Date.now()}`;
+      const adjustTx: Transaction = {
+        id: txId,
+        userId: targetUserId,
+        userName: targetUser.name,
+        userPhone: targetUser.phone,
+        userEmail: targetUser.email,
+        type: 'fund_interest',
+        amount: deltaAmount,
+        status: 'completed',
+        date: new Date().toLocaleDateString('pt-BR'),
+        timestamp: Date.now(),
+        note: `Ajuste Administrativo (${deltaAmount >= 0 ? '+' : ''}${formatCurrency(deltaAmount)}): ${reason}`,
+        adminNote: reason,
+        reviewedBy: user?.name || 'Administrador Central Catoca',
+        reviewedAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'transactions', txId), adjustTx);
+
+      if (user && user.id === targetUserId) {
+        setUser((prev) => prev ? { ...prev, balance: newBalance } : null);
+      }
+
+      return {
+        success: true,
+        message: `Saldo ${deltaAmount >= 0 ? 'creditado' : 'debitado'} com sucesso! Novo saldo do operador: ${formatCurrency(newBalance)}.`,
+      };
+    } catch (err: any) {
+      console.error('Erro ao ajustar saldo:', err);
+      return { success: false, message: err?.message || 'Falha ao realizar ajuste de saldo.' };
     }
   };
 
@@ -1270,6 +1632,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const value: AppContextType = {
     user,
     isAuthenticated: !!user,
+    isAdmin,
     language,
     setLanguage,
     t: translations[language],
@@ -1278,6 +1641,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     routeParams,
     register,
     login,
+    adminLoginShortcut,
     demoLogin,
     logout,
     claimDiamondLot,
@@ -1294,6 +1658,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     investInFund,
     investments,
     transactions,
+    allTransactions,
+    allUsers,
+    pendingDepositsCount,
+    pendingWithdrawalsCount,
+    totalPendingCount,
+    approveDeposit,
+    rejectDeposit,
+    approveWithdraw,
+    rejectWithdraw,
+    adjustUserBalance,
     announcements,
     miningTasks,
     concessionStats,

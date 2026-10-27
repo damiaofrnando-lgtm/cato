@@ -36,8 +36,13 @@ export const WithdrawModal: React.FC = () => {
       return;
     }
 
-    if (pin.length < 4) {
-      setError('Digite sua senha de pagamento de 4 a 6 dígitos.');
+    if (!user?.payPasswordSet) {
+      setError('Você precisa definir sua Senha de Pagamento antes de solicitar o saque. Clique em "Definir Senha".');
+      return;
+    }
+
+    if (!pin.trim()) {
+      setError('Digite a senha de pagamento verdadeira da sua conta.');
       return;
     }
 

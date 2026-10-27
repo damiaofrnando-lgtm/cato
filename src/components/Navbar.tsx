@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, Headphones, ChevronLeft, Eye, EyeOff, Gem } from 'lucide-react';
+import { Globe, Headphones, ChevronLeft, Eye, EyeOff, Gem, ShieldCheck } from 'lucide-react';
 
 interface NavbarProps {
   title?: string;
@@ -8,7 +8,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ title, showBack = false }) => {
-  const { currentRoute, navigateTo, openModal, user, t, hideBalance, toggleHideBalance, formatCurrency } = useApp();
+  const { currentRoute, navigateTo, openModal, user, t, hideBalance, toggleHideBalance, formatCurrency, isAdmin, totalPendingCount } = useApp();
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -67,7 +67,24 @@ export const Navbar: React.FC<NavbarProps> = ({ title, showBack = false }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        {/* Admin Panel Quick Access */}
+        {isAdmin && (
+          <button
+            onClick={() => navigateTo('/pages/admin/index')}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-950 text-amber-300 border border-amber-400/50 text-[11px] font-black shadow-xs active:scale-95 transition-all"
+            title="Acessar Painel do Administrador Catoca"
+          >
+            <ShieldCheck size={13} className="text-amber-400 shrink-0" />
+            <span>ADM</span>
+            {totalPendingCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-rose-500 text-white font-mono text-[9px] flex items-center justify-center font-bold">
+                {totalPendingCount}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Balance toggle */}
         {user && isMainTab && (
           <button

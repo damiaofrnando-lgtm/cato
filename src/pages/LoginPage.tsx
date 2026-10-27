@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { COUNTRY_CODES } from '../data/mockData';
-import { Eye, EyeOff, Globe, Phone, Mail, Lock, AlertCircle, Sparkles, Gem } from 'lucide-react';
+import { Eye, EyeOff, Globe, Phone, Mail, Lock, AlertCircle, Sparkles, Gem, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login, demoLogin, navigateTo, openModal, t } = useApp();
+  const { login, adminLoginShortcut, demoLogin, navigateTo, openModal, t } = useApp();
 
   const [loginMode, setLoginMode] = useState<'phone' | 'email'>('phone');
   const [phoneCode, setPhoneCode] = useState('+244');
@@ -295,7 +295,16 @@ export const LoginPage: React.FC = () => {
               </button>
             </p>
 
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <button
+                type="button"
+                onClick={adminLoginShortcut}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-slate-950 via-sky-950 to-slate-900 text-amber-300 hover:text-white border border-amber-400/40 text-xs font-black transition-all flex items-center justify-center gap-2 shadow-sm active:scale-98"
+              >
+                <ShieldCheck size={16} className="text-amber-400 shrink-0" />
+                <span>Painel do Administrador (UID 0j4XJDI6iXgXpODNoMZHs7daRnR2)</span>
+              </button>
+
               <button
                 type="button"
                 onClick={demoLogin}

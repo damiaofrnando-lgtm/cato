@@ -23,11 +23,13 @@ import { TeamPage } from './pages/TeamPage';
 import { MinePage } from './pages/MinePage';
 import { NewsPage } from './pages/NewsPage';
 import { RecordsPage } from './pages/RecordsPage';
+import { AdminPage } from './pages/AdminPage';
 
 const AppContent: React.FC = () => {
   const { currentRoute, activeModal } = useApp();
 
   const isAuthPage = currentRoute === '/pages/register/index' || currentRoute === '/pages/login/index';
+  const isAdminPage = currentRoute === '/pages/admin/index';
   const isMainTab = [
     '/pages/index/index',
     '/pages/tasks/index',
@@ -42,6 +44,8 @@ const AppContent: React.FC = () => {
         return <RegisterPage />;
       case '/pages/login/index':
         return <LoginPage />;
+      case '/pages/admin/index':
+        return <AdminPage />;
       case '/pages/index/index':
         return <HomePage />;
       case '/pages/tasks/index':
@@ -85,7 +89,7 @@ const AppContent: React.FC = () => {
       {/* Mobile Shell Wrapper with White Diamond Palette */}
       <div className="w-full max-w-md min-h-screen flex flex-col bg-slate-50 shadow-2xl relative border-x border-slate-200">
         {/* Top Navbar */}
-        {!isAuthPage && (
+        {!isAuthPage && !isAdminPage && (
           <Navbar title={getPageTitle()} showBack={!isMainTab} />
         )}
 
@@ -95,7 +99,7 @@ const AppContent: React.FC = () => {
         </main>
 
         {/* Bottom TabBar for main tabs and subpages when authenticated */}
-        {!isAuthPage && <TabBar />}
+        {!isAuthPage && !isAdminPage && <TabBar />}
 
         {/* Modals */}
         {activeModal?.name === 'language' && <LanguageModal />}

@@ -43,7 +43,9 @@ export const MinePage: React.FC = () => {
     toggleHideBalance,
     transactions,
     managerWhatsAppUrl,
-    whatsappGroupUrl
+    whatsappGroupUrl,
+    isAdmin,
+    totalPendingCount
   } = useApp();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [teamCount, setTeamCount] = useState<number>(0);
@@ -67,6 +69,13 @@ export const MinePage: React.FC = () => {
 
 
   const menuItems = [
+    ...(isAdmin ? [{
+      id: 'admin_panel',
+      label: `Painel do Administrador (Central Catoca) ${totalPendingCount > 0 ? `• ${totalPendingCount} pendentes` : ''}`,
+      icon: ShieldCheck,
+      color: 'text-amber-500',
+      action: () => navigateTo('/pages/admin/index'),
+    }] : []),
     {
       id: 'bind_iban',
       label: 'Vincular IBAN de Pagamento',
@@ -141,6 +150,37 @@ export const MinePage: React.FC = () => {
 
   return (
     <div className="pb-28 pt-2 px-4 space-y-4 max-w-md mx-auto">
+      {/* Administrator Control Banner */}
+      {isAdmin && (
+        <div className="p-3.5 rounded-3xl bg-gradient-to-r from-slate-950 via-sky-950 to-slate-900 text-white border border-amber-400/30 shadow-lg flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-white">PAINEL DO ADMINISTRADOR</span>
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950">
+                  ATIVO
+                </span>
+              </div>
+              <p className="text-[10px] text-amber-200 mt-0.5">
+                {totalPendingCount > 0
+                  ? `${totalPendingCount} solicitações aguardando aprovação`
+                  : 'Fila de aprovações em dia'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigateTo('/pages/admin/index')}
+            className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs active:scale-95 transition-all shadow-xs shrink-0"
+          >
+            Abrir ADM
+          </button>
+        </div>
+      )}
+
       {/* User Header Profile Card - Diamond White Faceted */}
       <div className="diamond-crystal-card p-5 rounded-3xl border border-sky-100 shadow-md relative overflow-hidden bg-white">
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-36 h-36 bg-sky-100/50 diamond-shape opacity-40 pointer-events-none" />
