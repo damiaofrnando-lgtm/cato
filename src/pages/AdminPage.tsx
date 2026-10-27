@@ -32,8 +32,11 @@ import {
   Lock,
   LogOut,
   Maximize2,
-  FileCheck2
+  FileCheck2,
+  Trash2,
+  UserX,
 } from 'lucide-react';
+import { ADMIN_UID, ADMIN_EMAILS } from '../context/AppContext';
 
 export const AdminPage: React.FC = () => {
   const {
@@ -48,6 +51,7 @@ export const AdminPage: React.FC = () => {
     approveWithdraw,
     rejectWithdraw,
     adjustUserBalance,
+    deleteUser,
     formatCurrency,
     navigateTo,
     logout,
@@ -62,6 +66,7 @@ export const AdminPage: React.FC = () => {
   const [selectedProofImg, setSelectedProofImg] = useState<string | null>(null);
   const [rejectModalTx, setRejectModalTx] = useState<Transaction | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -199,6 +204,25 @@ export const AdminPage: React.FC = () => {
         setActionFeedback({ type: 'success', msg: res.message });
         setRejectModalTx(null);
         setRejectReason('');
+      } else {
+        setActionFeedback({ type: 'error', msg: res.message });
+      }
+    } finally {
+      setActionLoading(false);
+      setTimeout(() => setActionFeedback(null), 5000);
+    }
+  };
+
+  // Handle Delete User Submit
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setActionLoading(true);
+    setActionFeedback(null);
+    try {
+      const res = await deleteUser(userToDelete.id);
+      if (res.success) {
+        setActionFeedback({ type: 'success', msg: res.message });
+        setUserToDelete(null);
       } else {
         setActionFeedback({ type: 'error', msg: res.message });
       }
@@ -814,6 +838,10 @@ export const AdminPage: React.FC = () => {
           <div className="space-y-3">
             {filteredUsers.map((u) => {
               const vipInfo = VIP_TIERS.find((t) => t.id === (u.vipLevel || 0)) || VIP_TIERS[0];
+              const isTargetAdmin =
+                u.id === ADMIN_UID ||
+                (u.email && ADMIN_EMAILS.includes(u.email)) ||
+                (user && user.id === u.id);
 
               return (
                 <div
@@ -821,33 +849,57 @@ export const AdminPage: React.FC = () => {
                   className="p-4 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3 hover:border-sky-300 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-xs">
                         {u.name ? u.name.charAt(0).toUpperCase() : 'O'}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-xs font-black text-slate-900">{u.name || 'Operador'}</h4>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="text-xs font-black text-slate-900 truncate">{u.name || 'Operador'}</h4>
                           <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-800">
                             {vipInfo.name}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-500 font-mono">
+                        <p className="text-[10px] text-slate-500 font-mono truncate">
                           Tel: {u.phone} · UID: {u.id.slice(0, 10)}...
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setAdjustTargetUser(u);
-                        setActiveTab('balance_adjust');
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-bold border border-sky-200 flex items-center gap-1 active:scale-95"
-                    >
-                      <Wallet size={12} />
-                      <span>Ajustar Saldo</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdjustTargetUser(u);
+                          setActiveTab('balance_adjust');
+                        }}
+                        className="px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-bold border border-sky-200 flex items-center gap-1 active:scale-95 transition-all"
+                        title="Ajustar saldo e auditar"
+                      >
+                        <Wallet size={12} />
+                        <span>Saldo</span>
+                      </button>
+
+                      {isTargetAdmin ? (
+                        <span
+                          className="px-2 py-1.5 rounded-xl bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200 flex items-center gap-1"
+                          title="Conta de Administrador Protegida"
+                        >
+                          <ShieldCheck size={11} className="text-sky-600" />
+                          <span>Admin</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setUserToDelete(u)}
+                          className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 text-[11px] font-bold border border-rose-200 flex items-center gap-1 active:scale-95 transition-all"
+                          title="Remover operador do sistema"
+                        >
+                          <Trash2 size={12} />
+                          <span>Remover</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Financial & Profile Grid */}
@@ -1117,11 +1169,25 @@ export const AdminPage: React.FC = () => {
               </button>
             </div>
             <div className="flex-1 overflow-auto p-2 bg-slate-100 flex items-center justify-center">
-              <img
-                src={selectedProofImg}
-                alt="Comprovativo Ampliado"
-                className="w-full h-auto max-h-[70vh] object-contain rounded-2xl"
-              />
+              {selectedProofImg.startsWith('data:application/pdf') ? (
+                <div className="p-8 text-center space-y-3">
+                  <FileText size={54} className="mx-auto text-rose-500" />
+                  <p className="text-sm font-bold text-slate-800">Comprovativo em Ficheiro PDF</p>
+                  <a
+                    href={selectedProofImg}
+                    download="comprovativo_catoca_adm.pdf"
+                    className="inline-block px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold shadow-xs hover:bg-sky-700"
+                  >
+                    Baixar / Abrir Documento PDF
+                  </a>
+                </div>
+              ) : (
+                <img
+                  src={selectedProofImg}
+                  alt="Comprovativo Ampliado"
+                  className="w-full h-auto max-h-[70vh] object-contain rounded-2xl"
+                />
+              )}
             </div>
             <div className="p-3 bg-white border-t border-slate-200 text-center">
               <button
@@ -1192,6 +1258,92 @@ export const AdminPage: React.FC = () => {
                 className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50"
               >
                 {actionLoading ? 'Processando...' : 'Confirmar Recusa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE USER MODAL */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-md bg-white border-t sm:border border-slate-200 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-xs">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    Remover Operador do Sistema
+                  </h3>
+                  <p className="text-[11px] text-rose-600 font-bold">
+                    Eliminação de registo na base de dados
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setUserToDelete(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* User details preview card */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">Nome do Operador:</span>
+                <span className="font-bold text-slate-900">{userToDelete.name || 'Sem nome'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">Telefone / Contato:</span>
+                <span className="font-mono font-bold text-slate-900">{userToDelete.phone}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">E-mail Registrado:</span>
+                <span className="font-medium text-slate-700 truncate max-w-[200px]">{userToDelete.email || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">Saldo em Carteira:</span>
+                <span className="font-mono font-black text-slate-900">{formatCurrency(userToDelete.balance || 0)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">Nível VIP:</span>
+                <span className="font-bold text-sky-700">VIP {userToDelete.vipLevel || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">Identificador UID:</span>
+                <span className="font-mono text-[10px] text-slate-500 truncate max-w-[200px]">{userToDelete.id}</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+              <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                Tem certeza que deseja apagar o registro deste operador? O documento será removido permanentemente da coleção de utilizadores no Firestore da Catoca Diamante.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setUserToDelete(null)}
+                className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={handleConfirmDeleteUser}
+                className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+                <span>{actionLoading ? 'Removendo...' : 'Confirmar Remoção'}</span>
               </button>
             </div>
           </div>

@@ -14,8 +14,8 @@ export const WithdrawModal: React.FC = () => {
   const [success, setSuccess] = useState<boolean>(false);
 
   const amount = parseFloat(amountStr) || 0;
-  const fee = Math.round(amount * 0.05);
-  const netAmount = Math.max(0, amount - fee);
+  const fee = 0; // Taxa zero conforme solicitado pelo usuário
+  const netAmount = amount;
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +89,12 @@ export const WithdrawModal: React.FC = () => {
               <CheckCircle size={36} />
             </div>
             <h4 className="text-lg font-bold text-slate-900">Saque Solicitado com Sucesso!</h4>
-            <p className="text-sm text-slate-600">
-              O montante de {formatCurrency(netAmount)} foi enviado para sua conta bancária.
+            <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+              O montante de <strong className="text-slate-900">{formatCurrency(netAmount)}</strong> foi retirado da sua carteira e está <strong>Pendente</strong> aguardando aprovação do Administrador no painel.
             </p>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 max-w-xs mx-auto">
+              Caso o Administrador aprove, a transferência será liquidada. Se for recusado, o valor volta integralmente para sua carteira.
+            </div>
           </div>
         ) : (
           <form onSubmit={handleWithdraw} className="space-y-4">
@@ -207,14 +210,19 @@ export const WithdrawModal: React.FC = () => {
               />
 
               {amount > 0 && (
-                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] space-y-1">
-                  <div className="flex justify-between text-slate-500">
-                    <span>Taxa de processamento interbancário (5%):</span>
-                    <span className="font-mono text-slate-700">{formatCurrency(fee)}</span>
+                <div className="mt-2 p-3 rounded-2xl bg-sky-50/70 border border-sky-200 text-[11px] space-y-1.5 animate-fadeIn">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Taxa de processamento:</span>
+                    <span className="font-mono font-bold text-emerald-600">0 Kz (Isenção Total / Sem Taxas)</span>
                   </div>
-                  <div className="flex justify-between font-bold text-slate-800">
-                    <span>Valor líquido a receber:</span>
-                    <span className="font-mono text-emerald-600">{formatCurrency(netAmount)}</span>
+                  <div className="flex justify-between font-black text-slate-900 border-t border-sky-150 pt-1 text-xs">
+                    <span>Valor total a receber:</span>
+                    <span className="font-mono text-emerald-600 font-black">{formatCurrency(netAmount)}</span>
+                  </div>
+                  <div className="pt-1 text-[10px] text-sky-900 border-t border-sky-100 space-y-0.5">
+                    <p>• O valor sairá do seu saldo imediatamente ao confirmar.</p>
+                    <p>• Ficará com status <strong>Pendente</strong> até ser aprovado no painel do Administrador.</p>
+                    <p>• Se o Administrador recusar o saque, o saldo volta integralmente para sua carteira.</p>
                   </div>
                 </div>
               )}

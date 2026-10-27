@@ -14,7 +14,11 @@ import {
   PhoneCall, 
   Hash, 
   FileCheck2, 
-  Building 
+  Building,
+  Camera,
+  FolderOpen,
+  FileText,
+  Clock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -35,7 +39,8 @@ export const RechargeModal: React.FC = () => {
   const [senderName, setSenderName] = useState<string>('');
   const [txReferenceInput, setTxReferenceInput] = useState<string>('');
   const [proofError, setProofError] = useState<string>('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const amounts = [5000, 10000, 15000, 20000, 30000, 50000, 75000];
 
@@ -47,7 +52,7 @@ export const RechargeModal: React.FC = () => {
 
   const finalAmount = customAmount ? parseFloat(customAmount) || 0 : selectedAmount;
 
-  // Compress and handle file upload
+  // Compress and handle file upload (supports Gallery images and PDF/documents)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -55,8 +60,24 @@ export const RechargeModal: React.FC = () => {
     setProofError('');
     setProofFileName(file.name);
 
+    // If PDF document
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      if (file.size > 10 * 1024 * 1024) {
+        setProofError('O ficheiro PDF não pode exceder 10MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProofPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // If Image (JPG, PNG, WEBP, etc.)
     const reader = new FileReader();
     reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
       const img = new Image();
       img.onload = () => {
         // Resize to max 900px to maintain clean Firestore document size
@@ -80,13 +101,16 @@ export const RechargeModal: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
           setProofPreview(compressedDataUrl);
         } else {
-          setProofPreview(event.target?.result as string);
+          setProofPreview(dataUrl);
         }
       };
-      img.src = event.target?.result as string;
+      img.onerror = () => {
+        setProofPreview(dataUrl);
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -94,8 +118,11 @@ export const RechargeModal: React.FC = () => {
   const handleRemoveProof = () => {
     setProofPreview(null);
     setProofFileName('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   };
 
@@ -106,7 +133,7 @@ export const RechargeModal: React.FC = () => {
     }
 
     if (!proofPreview) {
-      setProofError('Por favor anexe a fotografia ou captura do comprovativo de pagamento.');
+      setProofError('Por favor anexe a imagem da galeria, ficheiro ou foto do comprovativo de pagamento.');
       return;
     }
 
@@ -131,7 +158,7 @@ export const RechargeModal: React.FC = () => {
         });
         setTimeout(() => {
           closeModal();
-        }, 2200);
+        }, 2500);
       } else {
         setProofError(res.message || 'Erro ao processar depósito.');
       }
@@ -452,43 +479,85 @@ export const RechargeModal: React.FC = () => {
                 )}
               </div>
 
-              {/* Hidden file input */}
+              {/* Hidden file inputs: Gallery/Files (no capture) & Camera (capture=environment) */}
               <input
-                ref={fileInputRef}
+                ref={galleryInputRef}
                 type="file"
-                accept="image/*,.pdf"
+                accept="image/*,application/pdf,.pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
                 capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />
 
               {!proofPreview ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-4 px-3 border-2 border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/50 hover:bg-sky-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all text-center cursor-pointer group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white border border-sky-200 shadow-xs flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform">
-                    <Upload size={18} />
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Option 1: Pick from Gallery or Files (Photos, Screenshots, PDFs) */}
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="p-3.5 border-2 border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/60 hover:bg-sky-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all text-center cursor-pointer group active:scale-98"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white border border-sky-200 shadow-xs flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform">
+                        <ImageIcon size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900">
+                          Galeria / Ficheiros
+                        </p>
+                        <p className="text-[9.5px] text-slate-500 mt-0.5 leading-tight">
+                          Foto da galeria ou PDF
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Option 2: Live Camera Capture */}
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="p-3.5 border-2 border-dashed border-sky-300 hover:border-sky-500 bg-sky-50/60 hover:bg-sky-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all text-center cursor-pointer group active:scale-98"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white border border-sky-200 shadow-xs flex items-center justify-center text-sky-600 group-hover:scale-110 transition-transform">
+                        <Camera size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900">
+                          Tirar Foto Agora
+                        </p>
+                        <p className="text-[9.5px] text-slate-500 mt-0.5 leading-tight">
+                          Fotografar talão impresso
+                        </p>
+                      </div>
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">
-                      Tirar Foto ou Anexar Comprovativo
-                    </p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      Captura da tela do BFA, Multicaixa Express ou talão de depósito
-                    </p>
-                  </div>
-                </button>
+
+                  <p className="text-[10px] text-slate-500 text-center">
+                    Formatos aceitos: JPG, PNG, WEBP, captura de tela do telemóvel ou documento PDF
+                  </p>
+                </div>
               ) : (
                 <div className="p-3 rounded-2xl bg-white border border-slate-200 flex items-center justify-between gap-3 shadow-xs">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
-                      <img
-                        src={proofPreview}
-                        alt="Comprovativo Preview"
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0 flex items-center justify-center">
+                      {proofFileName.toLowerCase().endsWith('.pdf') || proofPreview.startsWith('data:application/pdf') ? (
+                        <div className="w-full h-full bg-rose-50 text-rose-600 flex flex-col items-center justify-center">
+                          <FileText size={22} />
+                          <span className="text-[8px] font-black uppercase mt-0.5 font-mono">PDF</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={proofPreview}
+                          alt="Comprovativo Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-900 truncate">
@@ -504,7 +573,7 @@ export const RechargeModal: React.FC = () => {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => galleryInputRef.current?.click()}
                       className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold"
                     >
                       Trocar
@@ -519,6 +588,14 @@ export const RechargeModal: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Informative notice on pending status */}
+              <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-[10.5px] flex items-start gap-2">
+                <Clock size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                <span className="leading-snug">
+                  <strong>Fluxo de Validação:</strong> O seu depósito ficará <strong>Pendente</strong> no painel de administração Catoca. O saldo só aparecerá na sua carteira após aprovação oficial do Administrador.
+                </span>
+              </div>
 
               {/* Optional sender fields */}
               <div className="grid grid-cols-2 gap-2 pt-1">

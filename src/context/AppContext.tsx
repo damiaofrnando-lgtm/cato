@@ -16,6 +16,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   where,
@@ -71,6 +72,7 @@ interface AppContextType {
   approveWithdraw: (txId: string) => Promise<{ success: boolean; message: string }>;
   rejectWithdraw: (txId: string, reason: string) => Promise<{ success: boolean; message: string }>;
   adjustUserBalance: (userId: string, deltaAmount: number, reason: string) => Promise<{ success: boolean; message: string }>;
+  deleteUser: (userId: string) => Promise<{ success: boolean; message: string }>;
   announcements: Announcement[];
   miningTasks: DiamondTask[];
   concessionStats: ConcessionStats | null;
@@ -1020,7 +1022,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return {
         success: true,
-        message: `Comprovativo de depósito de ${formatCurrency(amount)} enviado para análise da administração Catoca! O saldo será liberado após a validação.`,
+        message: `Comprovativo de depósito de ${formatCurrency(amount)} enviado para análise da administração Catoca! O depósito ficará PENDENTE até aprovação no painel do Administrador.`,
       };
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `transactions/${user.id}`);
@@ -1028,7 +1030,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // 7. Withdraw in Firestore with strict TRUE payment password verification
+  // 7. Withdraw in Firestore with strict TRUE payment password verification (0% fee, pending until approved, refund if rejected)
   const withdraw = async (amount: number, accountType: string, accountNumber: string, accountName: string, pin?: string) => {
     if (!user) return { success: false, message: 'Usuário não autenticado' };
     if (amount < 1000) return { success: false, message: 'O valor mínimo para levantamento é de 1.000 Kz' };
@@ -1049,7 +1051,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    const netAmount = Math.round(amount * 0.95);
+    // Zero fee as requested: net amount = requested amount
+    const fee = 0;
+    const netAmount = amount;
 
     try {
       const userRef = doc(db, 'users', user.id);
@@ -1060,9 +1064,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bankName: user.bankAccount?.bankName || (accountType === 'multicaixa' ? 'Banco Multicaixa AO' : 'Conta Bancária'),
       };
 
-      // Deduct balance to hold funds during withdrawal review
+      // Immediately deduct requested amount from user's balance
+      const newBalance = user.balance - amount;
       await updateDoc(userRef, {
-        balance: user.balance - amount,
+        balance: newBalance,
         bankAccount: updatedAccount,
       });
 
@@ -1078,7 +1083,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'pending', // PENDING for Admin review and approval!
         date: new Date().toLocaleDateString('pt-BR'),
         timestamp: Date.now(),
-        note: `Ordem de Saque (${accountName} - ${accountNumber.slice(-4)}). Líquido: ${formatCurrency(netAmount)}`,
+        note: `Ordem de Saque (${accountName} - ${accountNumber.slice(-4)}). Taxa: 0 Kz (Isento). Líquido: ${formatCurrency(netAmount)}`,
         accountType,
         accountName,
         accountNumber,
@@ -1087,13 +1092,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setUser((prev) => prev ? {
         ...prev,
-        balance: prev.balance - amount,
+        balance: newBalance,
         bankAccount: updatedAccount,
       } : null);
 
       return {
         success: true,
-        message: `Solicitação de saque de ${formatCurrency(amount)} enviada para aprovação do Administrador Catoca!`,
+        message: `Solicitação de saque de ${formatCurrency(amount)} enviada! O valor saiu da sua carteira e ficará PENDENTE até aprovação no painel do Administrador (Taxa: 0 Kz). Se recusado, o valor volta integralmente.`,
       };
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `users/${user.id}`);
@@ -1291,6 +1296,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err: any) {
       console.error('Erro ao ajustar saldo:', err);
       return { success: false, message: err?.message || 'Falha ao realizar ajuste de saldo.' };
+    }
+  };
+
+  // ADMIN ACTION: Delete User from system
+  const deleteUser = async (targetUserId: string) => {
+    try {
+      if (!targetUserId) {
+        return { success: false, message: 'Identificador de utilizador inválido.' };
+      }
+
+      // Safeguard: Prevent deleting the primary admin account or current admin
+      if (targetUserId === ADMIN_UID || (user && user.id === targetUserId)) {
+        return { success: false, message: 'Operação recusada: Não é permitido remover a conta de administrador atual.' };
+      }
+
+      // Check user existence
+      const userRef = doc(db, 'users', targetUserId);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data() as User;
+        if (userData.email && ADMIN_EMAILS.includes(userData.email)) {
+          return { success: false, message: 'Operação recusada: Não é permitido remover um utilizador administrador.' };
+        }
+      }
+
+      // Delete the user record from Firestore
+      await deleteDoc(userRef);
+
+      // Immediately remove from allUsers in memory
+      setAllUsers((prev) => prev.filter((u) => u.id !== targetUserId));
+
+      return {
+        success: true,
+        message: 'Utilizador removido permanentemente da base de dados com sucesso.',
+      };
+    } catch (err: any) {
+      console.error('Erro ao remover utilizador:', err);
+      return { success: false, message: err?.message || 'Falha ao remover utilizador do banco de dados.' };
     }
   };
 
@@ -1668,6 +1712,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     approveWithdraw,
     rejectWithdraw,
     adjustUserBalance,
+    deleteUser,
     announcements,
     miningTasks,
     concessionStats,

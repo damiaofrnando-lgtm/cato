@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { FileText, ArrowUpCircle, ArrowDownCircle, CheckCircle, ClipboardCheck, Gift, Gem, Image as ImageIcon, X } from 'lucide-react';
+import { FileText, ArrowUpCircle, ArrowDownCircle, CheckCircle, ClipboardCheck, Gift, Gem, Image as ImageIcon, X, Clock, AlertCircle } from 'lucide-react';
 import { Transaction } from '../types';
 
 export const RecordsPage: React.FC = () => {
@@ -101,12 +101,32 @@ export const RecordsPage: React.FC = () => {
                     >
                       {isPositive ? `+${formatCurrency(tx.amount)}` : formatCurrency(tx.amount)}
                     </span>
-                    <div className="flex items-center gap-1 justify-end text-[10px] text-emerald-600 mt-0.5 font-bold">
-                      <CheckCircle size={10} />
-                      <span>Confirmado</span>
-                    </div>
+                    
+                    {tx.status === 'pending' ? (
+                      <div className="flex items-center gap-1 justify-end text-[10px] text-amber-600 mt-0.5 font-bold">
+                        <Clock size={11} />
+                        <span>Pendente (Aguardando Adm)</span>
+                      </div>
+                    ) : tx.status === 'failed' ? (
+                      <div className="flex items-center gap-1 justify-end text-[10px] text-rose-600 mt-0.5 font-bold">
+                        <AlertCircle size={11} />
+                        <span>Recusado (Estornado)</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 justify-end text-[10px] text-emerald-600 mt-0.5 font-bold">
+                        <CheckCircle size={11} />
+                        <span>Sucesso / Aprovado</span>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* Admin Note if Rejected */}
+                {tx.adminNote && (
+                  <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-[10.5px] text-rose-700">
+                    <strong>Motivo da recusa:</strong> {tx.adminNote}
+                  </div>
+                )}
 
                 {/* Comprovativo attached badge / button */}
                 {tx.proofUrl && (
@@ -118,7 +138,7 @@ export const RecordsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedProofTx(tx)}
-                      className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[10.5px] font-bold transition-colors"
+                      className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[10.5px] font-bold transition-colors cursor-pointer"
                     >
                       Ver Comprovativo
                     </button>
@@ -147,13 +167,27 @@ export const RecordsPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 max-h-96 flex items-center justify-center">
-              <img
-                src={selectedProofTx.proofUrl}
-                alt="Comprovativo"
-                className="w-full h-auto max-h-96 object-contain"
-                referrerPolicy="no-referrer"
-              />
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 max-h-96 flex items-center justify-center p-1">
+              {selectedProofTx.proofUrl.startsWith('data:application/pdf') ? (
+                <div className="p-8 text-center text-white space-y-3">
+                  <FileText size={48} className="mx-auto text-rose-400" />
+                  <p className="text-xs font-bold">Documento em formato PDF</p>
+                  <a
+                    href={selectedProofTx.proofUrl}
+                    download="comprovativo_catoca.pdf"
+                    className="inline-block px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold"
+                  >
+                    Baixar / Abrir PDF
+                  </a>
+                </div>
+              ) : (
+                <img
+                  src={selectedProofTx.proofUrl}
+                  alt="Comprovativo"
+                  className="w-full h-auto max-h-96 object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              )}
             </div>
 
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-700 space-y-1">
@@ -161,6 +195,18 @@ export const RecordsPage: React.FC = () => {
                 <span className="text-slate-400">Valor:</span>
                 <span className="font-bold text-emerald-600">
                   {formatCurrency(selectedProofTx.amount)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Status:</span>
+                <span className={`font-bold uppercase text-[10px] ${
+                  selectedProofTx.status === 'pending'
+                    ? 'text-amber-600'
+                    : selectedProofTx.status === 'failed'
+                    ? 'text-rose-600'
+                    : 'text-emerald-600'
+                }`}>
+                  {selectedProofTx.status === 'pending' ? 'Pendente' : selectedProofTx.status === 'failed' ? 'Recusado' : 'Aprovado'}
                 </span>
               </div>
               <div className="flex justify-between">
