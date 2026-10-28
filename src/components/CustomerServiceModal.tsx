@@ -10,7 +10,7 @@ interface ChatMessage {
 }
 
 export const CustomerServiceModal: React.FC = () => {
-  const { closeModal, managerWhatsAppUrl, whatsappGroupUrl } = useApp();
+  const { closeModal, openModal, managerWhatsAppUrl, whatsappGroupUrl } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -84,8 +84,8 @@ export const CustomerServiceModal: React.FC = () => {
           </button>
         </div>
 
-        {/* WhatsApp Group & Gerente Direct Card */}
-        <div className="p-3 my-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex flex-col gap-2 shadow-xs">
+        {/* Official Channels Banner */}
+        <div className="p-3 my-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-700 to-sky-700 text-white flex flex-col gap-2 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
@@ -96,28 +96,26 @@ export const CustomerServiceModal: React.FC = () => {
                 <span className="text-xs font-black">Canais Oficiais Catoca</span>
               </div>
             </div>
-            <span className="text-[9.5px] bg-white/20 text-emerald-100 px-2 py-0.5 rounded-full font-mono">
-              WhatsApp
+            <span className="text-[9.5px] bg-white/20 text-white px-2 py-0.5 rounded-full font-mono font-bold">
+              Telegram & WhatsApp
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-            <a
-              href={whatsappGroupUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-2.5 py-1.5 rounded-xl bg-white text-emerald-800 text-[10.5px] font-black shadow-xs hover:bg-emerald-50 active:scale-95 transition-all text-center"
+            <button
+              type="button"
+              onClick={() => openModal('channel_select', { type: 'group' })}
+              className="px-2.5 py-1.5 rounded-xl bg-white text-emerald-800 text-[10.5px] font-black shadow-xs hover:bg-emerald-50 active:scale-95 transition-all text-center cursor-pointer"
             >
               Grupo Discussão
-            </a>
-            <a
-              href={managerWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-950/80 text-white border border-emerald-400/40 text-[10.5px] font-black shadow-xs hover:bg-emerald-900 active:scale-95 transition-all text-center"
+            </button>
+            <button
+              type="button"
+              onClick={() => openModal('channel_select', { type: 'manager' })}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-900/80 text-white border border-white/30 text-[10.5px] font-black shadow-xs hover:bg-slate-900 active:scale-95 transition-all text-center cursor-pointer"
             >
               Falar c/ Gerente
-            </a>
+            </button>
           </div>
         </div>
 

@@ -360,22 +360,20 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5 w-full sm:w-auto">
-          <a
-            href={whatsappGroupUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-white text-emerald-800 font-black text-[11px] shadow-xs hover:bg-emerald-50 active:scale-95 transition-all text-center"
+          <button
+            type="button"
+            onClick={() => openModal('channel_select', { type: 'group' })}
+            className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-white text-emerald-800 font-black text-[11px] shadow-xs hover:bg-emerald-50 active:scale-95 transition-all text-center flex items-center justify-center gap-1"
           >
-            Grupo Discussão
-          </a>
-          <a
-            href={managerWhatsAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-emerald-950/70 text-emerald-200 border border-emerald-400/40 font-black text-[11px] shadow-xs hover:bg-emerald-900 active:scale-95 transition-all text-center"
+            <span>Grupo Discussão</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openModal('channel_select', { type: 'manager' })}
+            className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-emerald-950/70 text-emerald-200 border border-emerald-400/40 font-black text-[11px] shadow-xs hover:bg-emerald-900 active:scale-95 transition-all text-center flex items-center justify-center gap-1"
           >
-            Gerente
-          </a>
+            <span>Gerente</span>
+          </button>
         </div>
       </div>
 

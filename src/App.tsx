@@ -11,6 +11,7 @@ import { AppDownloadModal } from './components/AppDownloadModal';
 import { DailyRewardModal } from './components/DailyRewardModal';
 import { BindIbanModal } from './components/BindIbanModal';
 import { PaymentPasswordModal } from './components/PaymentPasswordModal';
+import { ChannelSelectModal } from './components/ChannelSelectModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Pages
@@ -111,6 +112,7 @@ const AppContent: React.FC = () => {
         {activeModal?.name === 'app_download' && <AppDownloadModal />}
         {activeModal?.name === 'bind_iban' && <BindIbanModal />}
         {activeModal?.name === 'payment_password' && <PaymentPasswordModal />}
+        {activeModal?.name === 'channel_select' && <ChannelSelectModal />}
       </div>
     </div>
   );

@@ -92,17 +92,17 @@ export const MinePage: React.FC = () => {
     },
     {
       id: 'whatsapp_group',
-      label: 'Grupo de Discussão Catoca',
+      label: 'Grupo de Discussão (Telegram / WhatsApp)',
       icon: MessageCircle,
       color: 'text-emerald-600',
-      action: () => window.open(whatsappGroupUrl, '_blank'),
+      action: () => openModal('channel_select', { type: 'group' }),
     },
     {
       id: 'manager',
-      label: 'Gerente de Atendimento (WhatsApp)',
+      label: 'Gerente de Atendimento (Telegram / WhatsApp)',
       icon: UserCheck,
       color: 'text-indigo-600',
-      action: () => window.open(managerWhatsAppUrl, '_blank'),
+      action: () => openModal('channel_select', { type: 'manager' }),
     },
     {
       id: 'records',
@@ -422,7 +422,7 @@ export const MinePage: React.FC = () => {
             </div>
           </div>
           <span className="text-[10px] font-bold bg-white/20 text-emerald-100 px-2 py-0.5 rounded-full border border-white/30">
-            WhatsApp
+            Telegram & WhatsApp
           </span>
         </div>
 
@@ -431,24 +431,22 @@ export const MinePage: React.FC = () => {
         </p>
 
         <div className="grid grid-cols-2 gap-2 pt-1">
-          <a
-            href={whatsappGroupUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-2.5 px-3 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all text-center"
+          <button
+            type="button"
+            onClick={() => openModal('channel_select', { type: 'group' })}
+            className="py-2.5 px-3 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 font-black text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all text-center cursor-pointer"
           >
             <MessageCircle size={15} />
             <span>Entrar no Grupo</span>
-          </a>
-          <a
-            href={managerWhatsAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-2.5 px-3 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400/40 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all text-center"
+          </button>
+          <button
+            type="button"
+            onClick={() => openModal('channel_select', { type: 'manager' })}
+            className="py-2.5 px-3 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400/40 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all text-center cursor-pointer"
           >
             <UserCheck size={15} />
             <span>Falar c/ Gerente</span>
-          </a>
+          </button>
         </div>
       </div>
 
