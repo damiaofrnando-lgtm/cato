@@ -198,7 +198,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const managerWhatsAppUrl = 'https://wa.me/message/RYWEG4XDAU64P1';
   const whatsappGroupUrl = 'https://chat.whatsapp.com/EytIiPqiWd1B5RvLk3kDKY?s=cl&p=i&mlu=4&ilr=4&iam=2';
   const telegramGroupUrl = 'https://t.me/+-dhiCaTEH1xiODY8';
-  const managerTelegramUrl = 'https://t.me/Anna779446';
+  const managerTelegramUrl = 'https://t.me/Joyce88664';
 
   // Sunday operational rest & maintenance state
   const [simulateSunday, setSimulateSunday] = useState<boolean>(() => {

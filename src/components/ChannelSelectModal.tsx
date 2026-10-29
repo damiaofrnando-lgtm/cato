@@ -176,7 +176,7 @@ export const ChannelSelectModal: React.FC = () => {
                   <p className="text-[11px] text-slate-500">
                     {isGroup
                       ? 'Grupo oficial no Telegram'
-                      : 'Gerente no Telegram (@Anna779446)'}
+                      : 'Gerente no Telegram (@Joyce88664)'}
                   </p>
                 </div>
               </div>

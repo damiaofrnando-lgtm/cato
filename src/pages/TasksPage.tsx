@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import { VIP_TIERS } from '../data/mockData';
 import { 
@@ -15,10 +15,8 @@ import {
   ArrowRight,
   TrendingUp,
   Cpu,
-  RefreshCw,
   Coins
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export const TasksPage: React.FC = () => {
   const { 
@@ -27,7 +25,6 @@ export const TasksPage: React.FC = () => {
     navigateTo, 
     countdownFormatted,
     countdownSeconds,
-    triggerSimulated24hProfit,
     lastAutoProfit,
     user,
     isSunday,
@@ -36,35 +33,10 @@ export const TasksPage: React.FC = () => {
     toggleSimulateSunday
   } = useApp();
 
-  const [simulating, setSimulating] = useState(false);
-  const [feedbackMsg, setFeedbackMsg] = useState('');
-
   // Calculate percentage of 24h cycle elapsed (24h = 86400 seconds)
   const totalCycleSeconds = 24 * 60 * 60;
   const elapsedSeconds = Math.max(0, totalCycleSeconds - countdownSeconds);
   const progressPercent = Math.min(100, Math.max(1, Math.round((elapsedSeconds / totalCycleSeconds) * 100)));
-
-  const handleSimulateCycle = async () => {
-    setSimulating(true);
-    setFeedbackMsg('');
-
-    try {
-      const res = await triggerSimulated24hProfit();
-      setFeedbackMsg(res.message);
-
-      if (res.success) {
-        confetti({
-          particleCount: 110,
-          spread: 80,
-          origin: { y: 0.5 },
-          colors: ['#0284c7', '#38bdf8', '#ffffff', '#e0f2fe', '#60a5fa'],
-        });
-        setTimeout(() => setFeedbackMsg(''), 5000);
-      }
-    } finally {
-      setSimulating(false);
-    }
-  };
 
   const hasActiveDiamond = currentVipTier && currentVipTier.id > 0;
 
@@ -87,12 +59,6 @@ export const TasksPage: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {feedbackMsg && (
-          <div className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold text-center">
-            {feedbackMsg}
-          </div>
-        )}
       </div>
 
       {/* Sunday Operational Rest Alert */}
@@ -309,22 +275,6 @@ export const TasksPage: React.FC = () => {
               <strong>Sem Botão de Coleta: </strong>
               O lucro é gerado e creditado automaticamente no seu saldo a cada 24 horas.
             </div>
-          </div>
-
-          {/* Test / Simulation Action (for Instant Verification) */}
-          <div className="pt-1">
-            <button
-              onClick={handleSimulateCycle}
-              disabled={simulating || isSunday}
-              className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-98 border ${
-                isSunday 
-                  ? 'bg-amber-50 border-amber-200 text-amber-800 opacity-80 cursor-not-allowed' 
-                  : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-              }`}
-            >
-              <RefreshCw size={13} className={simulating ? 'animate-spin' : ''} />
-              <span>{isSunday ? 'Domingo: Tarefas Suspensas (Retoma Segunda-Feira)' : 'Simular Término de 24h (Testar Crédito Automático)'}</span>
-            </button>
           </div>
         </div>
       ) : (
